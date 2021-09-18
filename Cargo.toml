@@ -1,0 +1,20 @@
+[package]
+name = "convopt"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "src/docs-header.html" ]
+
+
+[dependencies]
+rand_xoshiro = "0.6.0"
+rand = "0.8.0"
+rand_distr = "0.4.1"
+approx = "0.5.0"
+nalgebra = "0.29.0"
+plotlib = "0.5.1"
+lazysort = "0.2.1"

@@ -1,0 +1,63 @@
+
+
+#-------------------------------------------------------------
+2021-09-06:|
+-------------
+
+Add the log messages into newton::dog_leg_step,
+add a parameter step:usize to this function.
+
+
+#-------------------------------------------------------------
+2021-09-07:|
+-------------
+
+Tests/equation_tests
+runs but does not print anything or terminate.
+
+#-------------------------------------------------------------
+2021-09-08:|
+-------------
+
+Implement a global solver, then some test functions,
+then a box constrained solver.
+
+
+#-------------------------------------------------------------
+2021-09-10:|
+-------------
+
+In examples/maxent_example.rs:
+the solver hangs in circular loop at a certain point, see
+results/MaxentProblem.log.
+
+#-------------------------------------------------------------
+2021-09-11:|
+-------------
+
+In newton::dog_leg_step
+implement the refinement of the parameter lambda with one iteration.
+
+#-------------------------------------------------------------
+2021-09-17:|
+-------------
+
+Refine the computation of trust radius and lambda.
+
+Note: backtracking line search <==> as using trust regions h'Ah<=r which are the trust
+regions for the linear approximation. So gradient descent is a search in direction suggested
+by the linear approximation.
+
+The quadratic approximation is not necessarily better than the linear one:
+f(h)=-h+h²-h³, decent direction is -> +oo and in this direction the linear approximation
+is accurate longer than the quadratic one.
+
+So we should mix lie search and trust region methods. First compute the trust radius
+by exact backtracking line search + ad hoc adjustment, e.g assume the point found by backtracking
+line search is the Cauchy point, what is the corresponding trust radius?
+
+Then refine the lambda computation, can always be done exactly using the Schur decomposition of H
+instead of the eigenvalue decomposition. Schur is 8 times more expensive than Cholesky. After one single
+Schur decomposition of H we can solve all equations (H+l*I)x=b in O(n²).
+
+For all this we need a good one dimensional minimizer, e.g. golden search.

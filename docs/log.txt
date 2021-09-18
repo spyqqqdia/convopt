@@ -1,0 +1,79 @@
+
+
+#-------------------------------------------------------------
+2021-09-06:|
+-------------
+
+Logging and matrix_utils (random matrices).
+Bug fixes in newton.rs.
+
+Status: compiles, untested.
+
+#-------------------------------------------------------------
+2021-09-07:|
+-------------
+
+Added module equation,
+matrix_utils: added ruiz equilibration
+Added Tests/equation_tests.rs
+
+Cleaned up the rest of the code.
+
+Status: compiles, untested.
+
+
+#-------------------------------------------------------------
+2021-09-08:|
+-------------
+
+Bug fix: matrix_utils::ruiz_equilibration
+Added a binary checking if ruiz_equilibration reduces the condition number
+significantly (it does not on our random test matrices).
+Added equation::qr_solve
+Added examples/cholesky_solve_example, qr_solve_example
+
+Equation solving with QR decomposition is slightly less accurate than using the
+Cholesky decomposition (forward error i.e. size of residual).
+
+Status: compiles, equation solving is tested.
+
+
+#-------------------------------------------------------------
+2021-09-09:|
+-------------
+
+Expanded the examples, more test computations on the effect of the 
+regularization parameter lambda in the solution of linear equations. 
+
+
+#-------------------------------------------------------------
+2021-09-10:|
+-------------
+
+Code reorganization, new modules, directory structure.
+crate::error::ConvOptError: now implements std::error::Error.
+optimization::newton: rewrite and expansion.
+Added a global solver in optimization::solve.
+Added examples/maxent_example.rs to test the solver.
+
+Status: compiles and runs but the solver hangs in circular loop at
+a certain point.
+
+
+#-------------------------------------------------------------
+2021-09-11:|
+-------------
+
+Bug fixes,
+Extended optimization::NewtonStep
+
+Status: runs satisfactorily.
+
+#-------------------------------------------------------------
+2021-09-17:|
+-------------
+
+Expanded the struct NewtonStepResult, new  function to compute the regularization
+parameter lambda, added the Rosenbrook function as a minimization problem.
+
+Status: compiles but does not converge on the Rosenbrook function.
