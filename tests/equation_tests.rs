@@ -27,8 +27,8 @@ fn test_cholesky_solve() {
     let chol_A = A.cholesky().unwrap();
     let L: DMat = chol_A.l();
     let U: DMat = L.transpose();
-    let w = forward_solve(&L,&b)?;
-    let x = back_solve(&U,&w)?;
+    let w = forward_solve(&L,&b,0f64)?;
+    let x = back_solve(&U,&w,0f64)?;
     let residual = &b - &A*x;
     assert!(residual.norm() < 1e-12*&A.norm());
 }

@@ -42,8 +42,8 @@ fn main() {
         let chol_A = A.clone().cholesky().unwrap();
         let L: DMat = chol_A.l();
         let U: DMat = L.transpose();
-        let w= forward_solve(&L,&b).unwrap();
-        let x = back_solve(&U,&w).unwrap();
+        let w= forward_solve(&L,&b,0f64).unwrap();
+        let x = back_solve(&U,&w,0f64).unwrap();
         let residual = &b - &A*x;
         println!("||b-Ax||_2 as percent of ||A||_2: {0:.1}", 100f64*&residual.norm()/&A.norm());
         println!("||b-Ax||_2 as percent of ||b||_2: {0:.1}", 100f64*&residual.norm()/&b.norm());

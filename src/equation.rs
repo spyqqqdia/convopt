@@ -69,9 +69,11 @@ pub fn qr_solve(H: &DMat, b: &DVec, l: f64) -> Result<DVec> {
     }
 }
 
-/// Assuming that L is a lower triangular matrix, solves Lx=y. Only the lower triangular part
-/// of L is used, lower triangularity is not checked.
-pub fn forward_solve(L: &DMat, y: &DVec) -> Result<DVec> {
+/// Assuming that L is a lower triangular matrix, solves (L+lI)x=y, where I s the identity matrix.
+/// Only the lower triangular part of L is used, lower triangularity is not checked.
+///
+///
+pub fn forward_solve(L: &DMat, y: &DVec, l:f64) -> Result<DVec> {
 
     let n=L.shape().0;
     assert!(L.shape().1==n && y.len()==n);
@@ -80,23 +82,24 @@ pub fn forward_solve(L: &DMat, y: &DVec) -> Result<DVec> {
     let mut i=0;
     while i<n {
 
-        if L[(i,i)].abs()<1e-20*normL {
+        if (l+L[(i,i)]).abs()<1e-20*normL {
             return Err(ConvOptError::new(ErrKind::ForwardSolveFailure("Zero diagonal element")));
         }
         let mut s = 0f64;  // \sum_{j<i}L_ijx_j
         let mut j=0;
         while j< i { s+=L[(i,j)]*x[j]; j+=1; }
 
-        x[i] = (y[i]-s)/L[(i,i)];
+        x[i] = (y[i]-s)/(l+L[(i,i)]);
         i+=1;
     }
     Ok(x)
 }
 
 
-/// Assuming that U is an upper triangular matrix, solves Ux=y. Only the upper triangular part
-/// of L is used, upper triangularity is not checked.
-pub fn back_solve(U: &DMat, y: &DVec) -> Result<DVec> {
+/// Assuming that U is an upper triangular matrix, solves (U+lI)x=y, where I s the identity matrix.
+/// Only the upper triangular part of U is used, upper triangularity is not checked.
+///
+pub fn back_solve(U: &DMat, y: &DVec, l:f64) -> Result<DVec> {
 
     let n = U.shape().0;
     assert!(U.shape().1==n && y.len()==n);
@@ -106,14 +109,14 @@ pub fn back_solve(U: &DMat, y: &DVec) -> Result<DVec> {
     let mut go_on = true;    // checks i>=0
     while go_on {
 
-        if U[(i,i)].abs()<1e-20*normL {
+        if (l+U[(i,i)]).abs()<1e-20*normL {
             return Err(ConvOptError::new(ErrKind::BackSolveFailure("Zero diagonal element")));
         }
         let mut s = 0f64;  // \sum_{j>}U_ijx_j
         let mut j = n-1;
         while j>i { s+=U[(i,j)]*x[j]; j-=1; }
 
-        x[i] = (y[i]-s)/U[(i,i)];
+        x[i] = (y[i]-s)/(l+U[(i,i)]);
         // note i-=1 will fail for i==0 because of i:usize
         if i==0 { go_on=false; } else { i-=1} ;
     }
