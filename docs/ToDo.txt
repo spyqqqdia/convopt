@@ -61,3 +61,14 @@ instead of the eigenvalue decomposition. Schur is 8 times more expensive than Ch
 Schur decomposition of H we can solve all equations (H+l*I)x=b in O(n²).
 
 For all this we need a good one dimensional minimizer, e.g. golden search.
+
+
+#-------------------------------------------------------------
+2021-09-24:|
+-------------
+
+New module linesearch with function linesearch::golden-search.
+New example: golden_search_example
+Status:
+compiles and runs but algorithm is not correct. We need to check the curvature conditions
+when selecting the next interval.

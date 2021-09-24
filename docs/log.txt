@@ -77,3 +77,14 @@ Expanded the struct NewtonStepResult, new  function to compute the regularizatio
 parameter lambda, added the Rosenbrook function as a minimization problem.
 
 Status: compiles but does not converge on the Rosenbrook function.
+
+
+#-------------------------------------------------------------
+2021-09-24:|
+-------------
+
+New module linesearch with function linesearch::golden-search.
+New example: golden_search_example
+Status:
+compiles and runs but algorithm is not correct. We need to check the curvature conditions
+when selecting the next interval.

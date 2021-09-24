@@ -1,11 +1,12 @@
 
 pub use self::newton::*;
 pub use self::solve::*;
+pub use self::linesearch::*;
 
 use crate::{DVec, DMat};
 
 
-
+mod linesearch;
 mod newton;
 mod solve;
 
