@@ -4,7 +4,7 @@ use crate::{
     equation::cholesky_solve_regularized,
     Result, DVec, DMat, FUN_nD_TO_1D,
     logging::Logger,
-    optimization::MinProblem
+    optimization::{MinProblem, golden_search}
 };
 
 use super::Region;
@@ -52,12 +52,16 @@ pub struct NewtonStep {
     pub next_point_ID: &'static str,
     pub old_trust_radius: f64,
     pub new_trust_radius: f64,
+    /// step size to line search point
+    pub r_ls: f64,
     /// step size to cauchy point
     pub r_cp: f64,
     /// step size to dog leg point
     pub r_dlp: f64,
     /// step size to global quadratic optimizer
     pub r_glm: f64,
+    /// decrease in value of objective function as %(f(current iterate)) at  line search point
+    pub ls_decrease: f64,
     /// decrease in value of objective function as %(f(current iterate)) at Cauchy point
     pub cp_decrease: f64,
     /// decrease in value of objective function as %(f(current iterate)) at dog leg point
@@ -76,20 +80,36 @@ pub struct NewtonStep {
 impl fmt::Display for NewtonStep {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(format!(
-            "moving to: {}, old_trust_radius: {1:.5}, new_trust_radius: {2:.5},\n\
-            r_cp: {3:.4}, r_dlp: {4:.4}, r_glm:{5:.4},\n\
-            objF(next_point): {6:.6},\n\
-            norm of gradient: {7:.4}\n\
-            function value decrease (% current iterate): cp: {8:.6}, dlp: {9:.6}, glm: {10:.6}, \
-            next point: {11:.4}",
+            "moving to: {}\nold_trust_radius: {1:.5}, new_trust_radius: {2:.5},\n\
+            r_ls: {3:.4}, r_cp: {4:.4}, r_dlp: {5:.4}, r_glm: {6:.4},\n\
+            f(x_next): {7:.6},\n\
+            ||gradient(f,x_next)||: {8:.4}\n\
+            function value decrease (% current iterate):\
+            ls: {9:.6}, cp: {10:.6}, dlp: {11:.6}, glm: {12:.6}\n\
+            next point: {13:.4}",
             self.next_point_ID, self.old_trust_radius, self.new_trust_radius,
-            self.r_cp, self.r_dlp,self.r_glm,
+            self.r_ls, self.r_cp, self.r_dlp,self.r_glm,
             self.objF_next_point, self.norm_gradient,
-            self.cp_decrease, self.dlp_decrease, self.glm_decrease, &self.next_point
+            self.ls_decrease, self.cp_decrease, self.dlp_decrease, self.glm_decrease,
+            self.next_point
         ).as_str())
     }
 }
 
+
+/// Cauchy point computed from current iterate x, gradient g and Hessian H of objective
+/// function f at x.
+///
+fn cauchy_point(x:&DVec, g: &DVec, H: &DMat, r: f64) -> DVec {
+
+    let norm_g_squared = g.norm_squared();
+    let norm_g = norm_g_squared.sqrt();
+    let Hg: DVec = H * g;
+    let q = g.dot(&Hg);
+    let t = (r / norm_g).min(norm_g_squared / q);
+
+    x - t * g
+}
 
 
 /// Dog leg point computed from current iterate x, Cauchy point cp and directional
@@ -106,6 +126,21 @@ fn dog_leg_point(x:&DVec,cp: &DVec, d: &DVec, r: f64) -> DVec {
     let sign = if cd > 0f64 { 1f64 } else { -1f64 };
     let t = cd - sign*(r*r - c2 + cd*cd).sqrt();
     (cp + t * u).clone()
+}
+
+/// Regularized global minimizer x+newton_step of quadratic approximation of f centered at x.
+/// Newton_step: solution of (H+lambda*I) = -g
+///
+/// #Arguments:
+///
+/// 'g': gradient of f at x
+/// 'H': Hessian of f at x
+/// 'lambda': regularization parameter
+///
+pub fn global_quadratic_minimizer(x: &DVec, g: &DVec, H: &DMat, lambda:f64) -> Result<DVec> {
+
+    let newton_step: DVec = solve_newton_equation(&g, &H,lambda)?;
+    Ok(x+newton_step)
 }
 
 
@@ -126,31 +161,34 @@ fn dog_leg_point(x:&DVec,cp: &DVec, d: &DVec, r: f64) -> DVec {
 /// * `lambda`: regularization parameter in Newton equation.
 ///
 pub fn newton_step(
-    x: &DVec, min_prob: &MinProblem, r:f64, lambda:f64
+    x: &DVec, min_prob: &dyn MinProblem, r:f64, lambda:f64
 ) -> Result<NewtonStep> {
 
     let G = min_prob.domain();
     assert!(G.contains(x),"iterate x not in region G = {}",G.id());
 
     let g = min_prob.gradient(&x);
-    let norm_g_squared = g.norm_squared();
-    let norm_g = norm_g_squared.sqrt();
     let H = min_prob.hessian(&x);
-    let Hg: DVec = &H * &g;
-    let q = &g.dot(&Hg);
-    let t = (r / norm_g).min(norm_g_squared / q);
 
-    let next_point_id: &str;
-    let new_trust_radius: f64;
-    let cp: DVec = x - t * &g;  // Cauchy point
+    let mut next_point_id: &str;
+    let cp= cauchy_point(x,&g,&H,r);
     let cp_G: DVec = G.retract(x,&cp);
     let r_cp = (x-&cp_G).norm();
 
     // global minimizer glm of quadratic approximation:
-    let newton_step: DVec = solve_newton_equation(&g, &H,lambda)?;
-    let glm = x+newton_step;
+    let glm = global_quadratic_minimizer(x,&g,&H,lambda)?;
     let mut glm_G: DVec = G.retract(x,&glm);
     let mut r_glm = (x-&glm_G).norm();
+
+    // line search in direction of newton step
+    let p = &glm_G-x;   // note: shorter than newton step because of retraction
+    let f = |z: &DVec| min_prob.objective_fn(z);
+    let phi = |t:f64| f(&(x+t*&p));
+    let ls_result = golden_search(&phi,0f64,1f64,0.1f64);
+    let t_ls = ls_result.0;
+    let ls: DVec = x+t_ls*&p;            // minimizer of f in direction of glm
+    let r_ls = t_ls*&p.norm();           // ||ls-x||
+    let f_ls = ls_result.1;
 
     // dog-leg point, useful ony if b is outside the trust radius
     let d = &glm-&cp;    // direction from cp to glm
@@ -158,55 +196,62 @@ pub fn newton_step(
     let dlp_G: DVec = G.retract(x,&dlp);
     let r_dlp = (x-&dlp_G).norm();
 
-
-    let fx = min_prob.objective_fn(&x);
-    let f_cp= min_prob.objective_fn(&cp_G);
-    let f_glm = min_prob.objective_fn(&glm_G);
-    let f_dlp=  min_prob.objective_fn(&dlp_G);
-
+    let fx = f(&x);
     let rho = 1e-10+fx.abs();
-    let cp_decrease = 100f64*(fx-f_cp) / rho;
-    let dlp_decrease = 100f64*(fx-f_dlp) / rho;
-    let glm_decrease = 100f64*(fx-f_glm) / rho;
+    // tp2: quadratic approximation of f centered at x,
+    // decrease fx-tp2(z) of tp2 at point z
+    let tp2_decrease = |z: &DVec| {
 
-    // if the glm solution is closer the the current iterate than the cp but worse,
-    // maybe the regularization parameter lambda was too big, shrink it:
-    let glm_step_too_small =
-        (r_glm<=r_cp) && (glm_decrease < cp_decrease) ||
-            (r_glm<=r_dlp) && (glm_decrease < dlp_decrease);
-    if glm_step_too_small {
+        let h = z-x;
+        -(&g.dot(&h) + 05f64*(&H * &h).dot(&h))
+    };
 
-        let bigger_newton_step = solve_newton_equation(&g, &H,lambda/10f64)?;
-        let glm_1 = x+bigger_newton_step;
-        glm_G = G.retract(x,&glm_1); // the old glm is irrelevant
-        r_glm = (x-&glm_G).norm();
-    }
-
+    // determine the point z=ls,glm,cp,dlp with minimal value f(z)
+    let f_glm = f(&glm_G);
+    let f_cp = f(&cp_G);
+    let f_dlp = f(&dlp_G);
     let next_point: DVec =
-        if f_cp.min(f_glm).min(f_dlp) >= fx { // no decrease
+        if f_ls.min(f_glm).min(f_cp).min(f_dlp) >= fx { // no decrease
 
-            new_trust_radius = r/2f64;
             next_point_id = "no move";
             x.clone()
 
-        } else if f_cp <= f_glm.min(f_dlp) {
+        } else if f_ls <= f_glm.min(f_cp).min(f_dlp) {
 
-            next_point_id = "Cauchy point";
-            new_trust_radius = (r_cp+r)/2f64;
-            cp_G
+            next_point_id = "line search point";
+            ls.clone()
 
-        } else if f_glm <= f_cp.min(f_dlp) {
+        } else if f_glm <= f_ls.min(f_cp).min(f_dlp) {
 
-            new_trust_radius = 0.1f64*r+0.9f64*r_glm;
             next_point_id = "global minimizer";
             glm_G.clone()
 
+        } else if f_cp <= f_ls.min(f_glm).min(f_dlp) {
+
+            next_point_id = "Cauchy point";
+            cp_G
+
         } else {  // f_dlp is the smallest
 
-            new_trust_radius = 1.5f64*r;
             next_point_id = "dog leg point";
             dlp_G
         };
+
+
+    let tp2_decrease_at_next_point = tp2_decrease(&next_point);
+    let ls_decrease= 100f64*(fx-f_ls)/rho;
+    let cp_decrease= 100f64*(fx-f_cp)/rho;
+    let dlp_decrease= 100f64*(fx-f_dlp)/rho;
+    let glm_decrease= 100f64*(fx-f_glm)/rho;
+    let f_decrease_at_next_point =
+        ls_decrease.max(cp_decrease).max(dlp_decrease).max(glm_decrease);
+    // success ratio to determine new rust radius
+    let qq = f_decrease_at_next_point / tp2_decrease_at_next_point;
+
+    // new trust radius
+    let new_trust_radius =
+        if r_ls >= 0.99999*r_glm { 1.5*r_ls } else if qq > 0.3 { 2f64*r } else
+        if qq > 0.1  { r } else { r / 2f64};
 
     let norm_grad = min_prob.gradient(&next_point).norm();
     let f_next_point = min_prob.objective_fn(&next_point);
@@ -215,9 +260,11 @@ pub fn newton_step(
         next_point_ID: next_point_id,
         old_trust_radius: r,
         new_trust_radius,
+        r_ls,
         r_cp,
         r_dlp,
         r_glm,
+        ls_decrease,
         cp_decrease,
         dlp_decrease,
         glm_decrease,

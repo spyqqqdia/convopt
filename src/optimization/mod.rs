@@ -3,7 +3,7 @@ pub use self::newton::*;
 pub use self::solve::*;
 pub use self::linesearch::*;
 
-use crate::{DVec, DMat};
+use crate::{Result, DVec, DMat};
 
 
 mod linesearch;
@@ -105,7 +105,31 @@ pub trait MinProblem {
     fn gradient(&self,x:&DVec) -> DVec;
     fn hessian(&self,x:&DVec) -> DMat;
     /// domain on which the objective function is minimized
-    fn domain(&self) -> &Region;
-    /// suggested: something <= dist(start_point,bdry(domain))
-    fn initial_trust_radius(&self) -> f64;
+    fn domain(&self) -> &dyn Region;
+
+    /// determined by the behaviour of the objective function f along the line to
+    /// the global minimizer of the quadratic approximation of f
+    fn trust_radius(&self) -> f64 {
+
+        let x = self.start_point();
+        let g = self.gradient(&x);
+        let H = self.hessian(&x);
+        // small lambda puts glm far out
+        let lambda = 0.001f64.min(self.gradient(&x).norm() / 10f64);
+        match global_quadratic_minimizer(&x,&g,&H,lambda) {
+
+            Err(e) => 1.0,
+            Ok(glm) => {
+                let D = self.domain();
+                let glm_G = D.retract(&x,&glm);
+                let d = &glm_G-&x;
+
+                // line search in direction of glm
+                let phi = |t:f64| self.objective_fn(&(&x+t*&d));
+                let ls_result = golden_search(&phi,0f64,1f64,0.1);
+                let t_ls = ls_result.0;
+                (t_ls*&d.norm()).max(1.0)
+            }
+        }
+    }
 }

@@ -1,5 +1,5 @@
 use convopt::{
-    DVec, DMat,
+    Result,DVec, DMat,
     matrix_utils::*,
     equation::*
 };

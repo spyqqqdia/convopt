@@ -26,7 +26,7 @@ pub fn solve_min_problem(min_prob: &impl MinProblem, eps:f64, max_iter:usize) ->
     let mut logger = Logger::new(format!("results/{}.log",min_prob.id()).as_str());
 
     let mut x = min_prob.start_point();
-    let mut r= min_prob.initial_trust_radius();
+    let mut r= min_prob.trust_radius();
     let mut grad = min_prob.gradient(&x);
     let mut lambda = reg_lambda(r, &grad);
 
@@ -38,7 +38,7 @@ pub fn solve_min_problem(min_prob: &impl MinProblem, eps:f64, max_iter:usize) ->
     while(iter<=max_iter && grad.norm()>=rho){
 
         let step = newton_step(&x, min_prob, r, lambda)?;
-        logger.write(format!("\n\nIteration: {}, step: {}",iter,&step).as_str());
+        logger.write(format!("\n\nIteration: {}\nstep: {}",iter,&step).as_str());
         x = step.next_point;
         r = step.new_trust_radius;
         grad = min_prob.gradient(&x);

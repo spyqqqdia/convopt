@@ -72,3 +72,12 @@ New example: golden_search_example
 Status:
 compiles and runs but algorithm is not correct. We need to check the curvature conditions
 when selecting the next interval.
+
+
+#-------------------------------------------------------------
+2021-09-28:|
+-------------
+
+optimization::newton::newton_step
+does not handle no_move state correctly: stays there until it hits max_iter limit.
+See examples/rosenbrook_example.rs

@@ -5,8 +5,8 @@ use convopt::{
 };
 
 fn main() {
-    let dim = 5usize;
-    let min_prob = Rosenbrook::new(1f64,100f64);
+
+    let min_prob = Rosenbrook::new(1f64,10f64);
     let eps = 1e-4;
     let max_iter = 100usize;
     println!("\nSolving problem Rosenbrook:");

@@ -42,8 +42,7 @@ impl MinProblem for Maxent {
             |i,j| if i==j { 1f64/x[i]+20f64 } else { 20f64 }
         )
     }
-    fn domain(&self) -> &Region { &(self.G) }
-    fn initial_trust_radius(&self) -> f64 { 0.08 }
+    fn domain(&self) -> &dyn Region { &(self.G) }
 }
 
 
@@ -53,7 +52,7 @@ impl MinProblem for Maxent {
 pub struct Rosenbrook {
     dim: usize,
     G: WholeSpace,
-    a:f64,
+    a: f64,
     b: f64,
 }
 impl Rosenbrook {
@@ -66,7 +65,7 @@ impl MinProblem for Rosenbrook {
     fn id(&self) -> &'static str { "ArgminRosenbrook" }
     fn dim(&self) -> usize { self.dim }
     fn start_point(&self) -> DVec {
-        DVec::from_fn(self.dim,|i,_| if i==0 { 20f64 } else { 10f64 })
+        DVec::from_fn(self.dim,|i,_| if i==0 { 6f64 } else { 2f64 })
     }
     fn objective_fn(&self,x: &DVec) -> f64 {
         let q = x[0]-self.a;
@@ -90,5 +89,4 @@ impl MinProblem for Rosenbrook {
         ])
     }
     fn domain(&self) -> &dyn Region { &(self.G) }
-    fn initial_trust_radius(&self) -> f64 { 4f64 }
 }

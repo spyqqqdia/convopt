@@ -88,3 +88,14 @@ New example: golden_search_example
 Status:
 compiles and runs but algorithm is not correct. We need to check the curvature conditions
 when selecting the next interval.
+
+
+#-------------------------------------------------------------
+2021-09-28:|
+-------------
+
+Integrated line search into Newton step computation.
+MinProblem: automatic initial trust radius based on line search.
+
+Examples: new example to test golden search.
+
