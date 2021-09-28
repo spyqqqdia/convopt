@@ -1,0 +1,558 @@
+\subsubsection{The Dog Leg Method}
+
+The Cauchy point above is the global minimizer $x$ of the quadratic function $f$ along 
+the line $x=-tg$, $t\geq 0$, in the steepest descent direction $-g=-\nabla f(0)$ subject 
+to the condition $\norm x\leq r$.
+
+In the dog leg method we extend this line by adding a line segment from the Cauchy point 
+to the global minmizer $p^H=-H^{-1}g$ of the quadratic function $f$, all subject to remaining
+inside the ball $B_r(0)$.
+
+The \textit{dog leg minimizer} $p^D_r$ is the global minimizer of the quadratic function $f$ 
+on this extended path to the boundary of the ball $B_r(0)$. If the Cauchy point $p^C_r$ is
+already on the boundary of the ball $B_r(0)$ (i.e. if $t_*=r/\norm{g}$), then $p^D_r=p^C_r$
+(as no extension is possible).
+
+Otherwise we minimize $f$ also on the line $p=p^C_r+t(p^C_r-p^H)$ subject to the constraint
+$\norm p\leq r$ and choose the new minimizer if it is better than the Cauchy point. In fact
+it is guaranteed to be better than the Cauchy point, as the function
+$$
+h(t)=f(p^C_r+t(p^C_r-p^H))
+$$ 
+is strictly decreasing for $t\in[0,1]$. Moreover the function
+$q(t)=\norm{p^C_r+t(p^C_r-p^H)}$ is strictly increasing (see the next lemma).
+This implies that the minimum is assumed on the boundary of the ball $B_r(0)$, i.e. $t$ is given
+by the equation
+%
+\begin{align}
+\label{t_dog_leg}
+r^2 &= \norm{a+t(b-a)}^2=t^2\norm{b-a}^2+2ta'(b-a)+\norm a^2,\q\text{where}\\\notag
+a &= p^C_r\q\text{and}\q b = p^H_.
+\end{align}
+%
+Alltogether we have
+%
+\begin{equation}
+\label{DoglegPoint}
+p^D_r= 
+\begin{cases}
+p^C_r&\text{if }\norm{p^C_r}=r,\text{ i.e. if }t_*=-r/\norm g,\\
+p^C_r+t(p^H-p^C_r),\q&\text{with }t\geq0\text{ in }(\ref{t_dog_leg})\text{ otherwise}.
+\end{cases}
+\end{equation}
+This is justified by the following
+%
+\begin{lem}
+\label{lem:dogleg}
+Assume that $H$ is positive definite. Then\\
+(a) The function $q(t)=\norm{p^C_r+t(p^C_r-p^H)}$ is strictly increasing for $t\in[0,1]$.\\
+(b) The function $h(t)=f(p^C_r+t(p^C_r-p^H))$ is strictly decreasing for $t\in[0,1]$.
+\end{lem}
+% 
+
+\medskip\noindent
+\textbf{Proof.} Set $a=p^C_r=-t_*g$ and $b=p^H$ and note that $Hb=-g$.
+With this we have
+%
+\begin{align}
+q(t)^2&=
+\norm{a+t(b-a)}^2=
+t^2\norm{b-a}^2+2ta'(b-a)+\norm a^2\\&=
+t^2\norm{b-a}^2+2ta'(b-a)+\norm a^2
+\end{align}
+%
+To see that this is increasing it will suffice to show that $a'(b-a)\geq 0$, that is
+$$
+\norm a^2\leq a'b=b'a.
+$$
+Now $\norm a^2 = t_*^2\norm g^2$ where $t_*\leq \norm g^2/(g'Hg)$ and so
+$$
+\norm a^2 \leq t_*\frac{\norm g^4}{g'Hg}
+$$
+Moreover
+$$
+b'a = t_*b'(-g)=t_*b'Hb.
+$$
+so that it will suiffice to show that
+$$
+\frac{\norm g^4}{g'Hg}\leq b'Hb.
+$$
+Recalling that $\norm g^2=g'g=-g'Hb$ we can rewrite this as
+$$
+(g'Hb)^2\leq (g'Hg)(b'Hb)
+$$
+which is the Cauchy-Schwartz inequality for the iner product $(g,b):=g'Hb$.
+This shows (a). To see (b) compute the derivative $h'(t)$ as
+%
+\begin{align*}
+h'(t) &:= 
+\frac{d}{dt}f(a+t(b-a)\\&=
+\frac{d}{dt}\big[g'(a+t(b-a)+\tfrac{1}{2}(a+t(b-a))'H(a+t(b-a))\big]\\&=
+g'(b-a)+(a+t(b-a))'H(b-a)\\&=
+g'(b-a)+a'H(b-a)+t(b-a)'H(b-a)
+\end{align*}
+%
+We need to show that $\rho(t)\leq 0$, for $t\in[0,1]$. Since $(b-a)'H(b-a)\geq0$,
+$h'(t)$ is increasing on this interval so this is equivalent with $h'(1)\leq 0$
+which simplifies to
+$$
+g'(b-a)+b'H(b-a)\leq 0.
+$$
+Now for vectors $u$, $v$ the inner product $u'v$ is equal to $v'u$ and using this,
+the symmetry of $H$ and $Hb=-g$ we have $b'H(b-a)=(b-a)'Hb=-g'(b-a)$ so that the above
+sum is actually equal to zero.\qed
+
+\medskip\noindent
+We can now summarize the dog leg method as follows
+
+\medskip\noindent
+\textbf{Dog Leg Method.}
+Find an approximate minmizer $p$ of $f(p)=g'p+\tfrac{1}{2}p'Hp$ subject to 
+$\norm p\leq r$ as follows:
+%
+\begin{packed_itemize}
+\item
+Solve $Hb=-g$ (the global minimizer). If $\norm b\leq r$ set $p=b=p^H$.
+\item
+If $\norm b>r$ compute the Cauchy point $p^C_r$ as in (\ref{CauchyPoint_1}).
+\item
+If $\norm{p^C_r}=r$, equivalently if $t_*=r/\norm g$, set $p=p^C_r$.
+\item
+If $\norm{p^C_r}<r$, let $p$ be the dog leg point $p=p^D_r$ from (\ref{DoglegPoint}).
+\end{packed_itemize}
+%
+
+\medskip\noindent
+If the Cauch point satisfies $\norm{p^C_r}<r$ then the dog leg point $p^D_r$ will reduce
+the value of the quadratic function $f$ more than the Cauchy point.
+
+If however this quadratic function is the second order Taylor polynomial approximation of
+a general nonlinear function $g$ in a neighborhood $B_r(x_k)$ of an iterate $x_k$, then 
+the dog leg point $x_k+p^D_r$ is \textit{not guaranteed} to reduce the value of $g$ more  
+than the Cauchy point $x_k+p^C_r$ and will do so only if the quadratic approximation $f$
+of $g$ on $B_r(x_k)$ is accurate enough.
+
+Generally this can be guaranteed only by making the radius $r$ small enough. Iterative methods
+for minimizing a general nonlinear function $g$ then use heuristics to reduce or enlarge the 
+\textit{trust radius} $r$ in each step according as the reduction in the value of $g$ in the 
+last step was a satisfactory multiple of the reduction of the quadratic approximation $f$
+of $g$.
+
+If the global minimizer $b=-H^{-1}g$ is outside the ball $B_r(0)$ then the Cauchy- or dog leg 
+point $p$ are guaranteed to satisfy $\norm p=r$. This is a consequence of the Lemma above.
+This ensures that trust region iterative methods do not take steps that are too short and is  
+a significant advantage over line search methods.
+
+
+
+
+
+\medskip\noindent
+\textbf{Regularization of the dog leg method.}
+\label{sec:dog_leg_regularized}
+
+Recall that the dog leg method is applied in the context of an iterative 
+minmization of some $C^2$-function $f$. At the current iterate $x_k$ we 
+use the second order Taylor polynomial $f$
+$$
+f(x_k+p)\simeq q(p)=f_k+g'p+p'Hp,
+$$
+where $f_k=f(x_k)$, $g=\nabla f(x_k)$ is the gradient and 
+$H=D^2f(x_k)$ the Hessian of $f$ at the iterate $x_k$.
+
+The radius $r$ defines the region $\norm p\leq r$ on which we believe that
+the quadratic approximation $f(x_k+p)\simeq q(p)$ is sufficiently accurate
+so that a step $p$ that decreases the value of $q$ will also lead to a 
+sufficient decrease in the value of $f$ if we move from the iterate $x_k$ 
+to the next iterate $x_{k+1}=x_k+p$. The ball $B_r(x_k)$ is the called the 
+\textit{trust region} around $x_k$.
+
+Thus we can compute the step $p$ by minmizing the quadratic function $q$ on 
+the ball $\norm p\leq r$ and we are in the situation described above where the
+dog leg method applies. 
+
+Suppose now that we fix some $\l\geq 0$ and replace the matrix $H$ with 
+$H+\l I$. This replaces the quadratic objective $q$ with the new function
+%
+\begin{equation}
+\label{f_lambda}
+q_\lambda(p)=g'p+p'(H+\l I)p = q(p)+\l\norm p^2.
+\end{equation}  
+%
+and leaves the Cauchy point unchanged or moves it closer to the iterate $x_k$
+along the line $x_k-tg$, see (\ref{CauchyPoint_1}), the value of $t_*$ may be 
+decreased via the second term in the $\min$.
+
+Instead of $p^H$ we now compute the point $p^H_\l:=p^{H+\l I}$ as the solution
+of
+%
+\begin{equation}
+\label{H_lambda}
+(H+\l I)p=-g
+\end{equation}  
+%
+and we know from proposition \ref{prop:f_eps_min} that this point is the absolute
+minimizer of $q$ on the ball $\norm p\leq r(\l)$, where
+$r(\l):=\norm{p^H_\l}$. From (\ref{norm_r}) we know that $r(\l)$ is a decreasing
+function of $\l\geq 0$. 
+
+To keep an iterative algorithm efficient we do not want to also solve the 
+equation $Hp=-g$ for the point $p=p^H$. There are now several cases:
+
+\medskip\noindent
+\textbf{Case (I)} $r(\l)<<r$. This is the bad case as it would lead to a very 
+small step $p$ and has to be avoided by decreasing $\l$. This case will however 
+be unavoidable if the global minimum of $q$ is located close to the point $p=0$,
+i.e. if the iterate $x_k$ above is already close to a local minimizer of $f$.
+
+\medskip\noindent
+\textbf{Case (II)} $r(\l)\leq r$ and $r(\l)\simeq r$. This is the ideal case
+as the point $p^H_\l$ is nearly the global optimizer of $q$ on the ball
+$\norm p\leq r$. 
+
+\medskip\noindent
+\textbf{Case (III)} $r(\l)>r$. This is the interesting case. We have two 
+subcases.
+
+\medskip\noindent
+\textbf{Case (IIIa)} the Cauchy $p^C_r(\l)$ point is on the boundary $\norm p=r$.\\ 
+In that case the algorithm takes the step $p=p^C_r(\l)$ and a step of sufficient size 
+assured.  
+
+\medskip\noindent
+\textbf{Case (IIIb)} the Cauchy point $p^C_r(\l)$ satisfies $\norm{p^C_r(\l)}<r$.\\
+Set $\delta:=r-\norm{p^C_r(\l)}$. We know from the proof of lemma \ref{lem:dogleg}
+(applied to the matrix $H+\l I$ instead of $H$) that the function
+$$
+q_\l(p)=q(p)+\l\norm p^2
+$$
+decreases on the line segment $p=p(t)$ from the Cauchy point $p^C_r(\l)$ to the
+dog leg point $p^D_r(\l)$ (computed with the matrix $H+\l I$). But since
+$\norm p$ increases by the amount $\delta$ along the same line segment of the
+dog leg path, the quadratic approxiation $q$ of $f$ must decrease at least by
+the amount $\l\delta^2$ from the value at the Cauchy point along the same line
+segment. 
+
+\noindent
+In other words we have
+$$
+q(p^D_r(\l))\leq q(p^C_r(\l))-\l\delta^2\leq q(0)-\l\delta^2.  
+$$  
+Now such a decrease must be small if the global minimizer of $q$ is 
+close to zero since then the value of $q$ cannot be reduced significantly from
+the value $q(0)$. 
+
+This will occur if the iterate $x_k$ is close to a local minimizer 
+of $f$ above and the radius $r$ is small enough so that the quadratic
+approximation $f(x_k+p)\simeq q(p)$ is accurate.
+Thus, as we approach a local minimizer of $f$ and shrink the trust radius $r$ 
+below the distance to the minimizer the Cauchy point will approach the boundary 
+$\norm p=r$. 
+
+Replacing $H$ with $H+\l I$, where $\l>0$, has the advantage that now $H$ can
+be singular and thus only needs to be positive semidefinite. The discussion 
+above shows that that will not destroy the iterative algorithm as long as we 
+ensure that $r(\l)$ is not too small and reduce $\l\downarrow 0$ as we approach
+a local minimum, i.e. as the norm of the gradient $g$ approaches zero.
+
+Now if $H=UDU'$ is the eigenvalue decomposition of $H$ with eigenvalues 
+$0\leq \l_1\leq\l_2\leq\dots\leq\l_n$ and corresponding eigenvectors
+$u_j=row_j(U)$ satisfying $Hu_j=\l_ju_j$ we have seen above that
+%
+\begin{equation}
+\label{norm_r_lambda}
+\norm{r(\l)}^2=\sum_j\frac{a_j^2}{(\l+\l_j)^2},
+\end{equation}
+%
+where the $a_j=g'u_j$ are the components of the gradient $g$ in direction of
+the eigenvectors $u_j$ of the Hessian $H$. In particular we have
+$$
+\sum_ja_j^2=\norm g^2.
+$$ 
+Unfortunately these components $a_j$ are unknown as it
+is far too costly to compute the eigendecomposition of $H$. Recall that we
+want to choose $\l$ such that
+%
+\begin{equation}
+\label{lambda_eq}
+\norm{r(\l)}=r
+\end{equation}
+% 
+but we cannot precisely control the norm $r(\l)$ from (\ref{norm_r_lambda})
+since the eigenvalues $\l_j$ and components $a_j$ are unknown. However we do 
+know something about the eigenvalues of $H$: we have $\l_j\geq 0$ and the sum
+$$
+\sum_j\l_j = tr(H)
+$$
+is the trace of $H$. Recall that the trace satisfies $tr(AB)=tr(BA)$ and so 
+$tr(H)=tr(UDU')=tr(DU'U)=tr(D)=\sum_j\l_j$). With this we can substitue the
+average value 
+$$
+\mu:=\frac{1}{n}\sum_j\l_j=tr(H)/n
+$$ 
+for all the $\l_j$ into (\ref{norm_r_lambda}) to obtain the approximate
+equation
+%
+\begin{equation}
+\label{lambda_eq_1}
+r=\norm{r(\l)}^2\simeq\sum_j\frac{a_j^2}{(\l+\mu)^2}=
+\frac{1}{(\l+\mu)^2}\norm g^2.
+\end{equation}
+%
+Solving for $\l$ yields 
+%
+\begin{equation}
+\label{lambda_1}
+\lambda=\norm g/\sqrt r-\mu
+\end{equation}
+%
+which is useful only if $\l>0$ and gives a rough indication for a useful value
+of $\l$. Note that this also indicates that $\l$ should shrink with the size of
+the gradient $g$. Recall that we have already motivated above that we should move 
+$\l\downarrow 0$ as $\norm g\downarrow 0$. This indicates the following heuristics 
+for $\l$:
+%
+\begin{equation}
+\label{lambda_2}
+\lambda=\kappa\norm g/\sqrt r,
+\end{equation}
+%
+where $\kappa\in(0,1)$ e.g. $\l=0.1$.
+
+\medskip\noindent
+\textbf{Remark.}
+In any minimization algorithm the various points which we compute are all minimizers of 
+the quadratic Taylor approximation $q$ to the objective function $f$ centered at the current 
+iterate $x_k$. We have verified above that they will provide a satisfactory decrease in the 
+value $q$ but not necessarily in the value of $f$.
+
+A decrease in the value of $q$ implies a decrease in the value of $f$ only if $q$ approximates 
+$f$ sufficiently closely on the ball $B_r(x_k)$. Clearly among the candidates for the next iterate
+which we have computed:
+%
+\begin{packed_enum}
+\item global minimizer $x_k+p^H$ of $q$,
+\item Cauchy point $x_k+p^C_r$,
+\item dog-leg point $x_k+p^D_r$ and
+\item global minimizer $x_k+p^H(\l)$ of $q(x_k+h)+\l\norm h^2$, i.e. the solution of\\ $(H+\l I)p=-g$, 
+\end{packed_enum}
+%
+We will choose as the next iterate the one 
+that provides the most decrease in the value of $f$ and not in the value of $q$.
+
+With this information we then also adjust the trust radius $r$. Suppose for example that the   
+global minimizer $x_k+p^H$ of $q$ is inside the ball $B_r(x_k)$ but does not provide the best decrease   
+in the value of $f$ (while it is guaranteed to provide the best decrease in the value of $q$).
+
+Then the conclusion must be that $q$ does not approximate $f$ satisfactorily on all of $B_r(x_k)$  
+and the trust radius $r$ needs to be decreased (note that the Cauchy point and dog-leg point both
+depend on the radius $r$).
+
+The dog-leg point is always on the boundary of the ball $B_r(x_k)$ and is not a desirable next iterate   
+if $x_k$ is already very close to a local minimizer $x^*$ of $f$. In this case the gradient $g=\nabla f(x_k)$    
+is close to zero hence the solutions $p^H$ of $Hp=-g$ and $p^H(\l)$ of $(H+\l I)p=-g$ will also be close to  
+zero so that the points $x_k+p^H$ and $x_k+p^H(\l)$ are expected to be close to $x^*$. In fact if we keep
+$\l>0$ bounded away from zero this is guaranteed to be true.
+
+This suggests the following mixed strategy: in each step compute the Cauchy point $x_k+p^C_r$, the dog leg point
+$x_k+p^D_r(\l)$ and the point $x_k+p^H(\l)$, where 
+$$
+\l = \max\{\ths\norm g/\sqrt r-\mu,\ths\kappa\ths\}
+$$
+for some small constant $\kappa>0$. The dog leg step $p^D_r(\l)$ is computed for the matrix $H+\l I$ i.e. we move 
+in the direction $x_k+p^H(\l)$ from the Cauchy point $x_k+p^C_r$. With this strategy we need to solve only one
+equation $(H+\l I)p=-g$ in each step entailing only one expensive matrix factorization.
+This approach has the advantage that it can handle singular Hessians $H$ and has the further advantage that the 
+regularized global minimizer $x_k+p^H(\l)$ is more likely to be inside the trust region $B_r(x_k)$ than the pure   
+global minimizer $x_k+p^H$.
+
+
+\subsection{Trust region versus backtracking line search}
+
+To compute the step $p$ from the current iterate $x$ to the next iterate $x+p$ we minimize the quadratic Taylor 
+approximation 
+$$
+\ol f(x+p)=f(x)+g\cdot p +\frac{1}{2}p'Hp
+$$
+as a function of the step $p$, where $g=\nabla f(x)$ is the gradient and $H=D^2f(x)$ is the Hessian of the objective function $f$ at $x$. This leads to the equation
+%
+\begin{equation}
+\label{p_H}
+Hp=-g,
+\end{equation}
+%
+for the step $p$ and we called the solution the \textit{full Newton step}, denoted $p=p^H$.
+However we do not expect this step to be optimal for a local minimization of the objective function $f$ itself,
+since the quadratic approximation $\ol f$ of $f$ centered at the current iterate $x$ cannot be trusted to be  
+a good approximation of $f$ globally.
+
+The trust region method tries to identify a spherical region $B_r(x)$ around the current iterate $x$ on which this 
+approximation can be trusted and computes the step by minimizing $\ol f(x+p)$ on the ball $B_r(x)$ instead. 
+The problem is the identification of the proper trust radius $r$ and, given $r$, carrying out the minimization,
+which is nontrivial.
+
+In this regard we have found the following: if $\l>0$ and $p(\l)$ is the solution of the regularized Newton equation    
+%
+\begin{equation}
+\label{p_H_l}
+(H+\l I)p=-g,
+\end{equation}
+%
+then $x+p(\l)$ minimizes the quadratic approximation $\ol f(x+p)$ of $f$ centered at $x$ on the ball $B_{r(\l)}(x)$,
+where the radius $r(\l)$ is given by $r(\l)=\norm{p(\l)}$. See proposition \ref{prop:f_eps_min}.
+
+\noindent
+If we have a reasonable idea of a useful trust radius $r$ the problem now becomes that of solving the equation
+%
+\begin{equation}
+\label{r_l}
+r(\l)=r
+\end{equation}
+%
+for the unknown $\l>0$. This is a nontrivial problem however. We have seen above that it can be solved using the 
+eigenvalue decomposition of $H$ and expanding the gradient $g$ in terms of the eigenvectors of $H$. We have found 
+that
+$$
+r(\l)^2 = \sum_j\frac{a_j^2}{(\l_j+\l)^2},
+$$
+where $Hu_j=\l_ju_j$ and $a_j=g\cdot u_j$ is the coefficient of $u_j$ in the expansion of $g$ in terms of the $u_j$.
+With this we could in principle solve the equation $r(\l)^2=r^2$ but that approach is too expensive since the eigenvector   
+decomposition of $H$ is expensive.
+
+There is a cheaper approach. The problem is to find a way to cheaply solve the equation (\ref{p_H_l}) for many values   
+of $\l$. The eigenvalue decomposition $H=UDU'$ with orthogonal $U$ and diagonal $D=diag(\l_j)$ allows us to do this   
+since it implies the decomposition
+$$
+H+\l I=U(D+\l I)U'
+$$
+with the same orthogonal matrix $U$ and trivially modified diagonal matrix $D+\l I$. Basically this reduces the problem
+to the solution of the trivial equation $(D+\l I)z=-U'g$ followed by a multiplication $p(\l)=Uz$. These operations are of 
+order $O(n^2)$ while the eigenvalue decomposition is of order $O(n^3)$ with a large constant.
+
+However we do not need to transform $H$ to a diagonal matrix with orthognal similarity, the same trick applies if we
+transform $H$ to an upper triangular matrix, i.e we write $H=QRQ'$, where $R$ is upper triangular and $Q$ is orthogonal.
+This is the so called \textit{Schur decomposition} of $H$, requires about $(8/3)n^3$ flops and is thus much cheaper
+than the eigenvalue decomposition of $H$.
+
+It reveals the eigenvalues of $H$ (as the diagonal elements of $R$) but we do not get the eigenvectors. With this we do
+not have a simple formula for $r(\l)$ as above but we still have the relation
+$$
+H+\l I = Q(R+\l I)Q'
+$$
+for all $\l$ and so we can reduce the solution of the equation $(H+\l I)p=-g$ to the solution of $(R+\l I)z=-Q'g$
+followed by $p(\l)=Qz$ which impies that $\norm{p(\l)}=\norm z$. The matrix $R+\l I$ is still upper triangular, 
+so the equation $(R+\l I)z=-Q'g$ can be solved cheaply ($n(n+1)/2$ flops, fewer than the matrix-vector product 
+$Q'g$) so that an iterative approach to the solution of the equation $\norm{z(\l)}=r$ becomes practical.
+
+Let us note in particular that one single Schur decomposition is enough to handle all values of $\l$. But the Schur 
+decomposition is still expensive compared to the Cholesky decomposition which only takes $n^3/3$ flops. Thus an 
+iterative algorithm has been devised which is based on the Cholesky decomposition. However in this algorithm we have
+to carry out a new Cholesky factorization of $H+\l I$ for each new value of $\l$. Still, since in general fewer than
+8 iterations are needed, this is the most economical approach, see the document \cite{NG}.
+
+Let us note that all these approaches are incompatible with a Ruiz-rebalancing of the matrix $H$
+since this will imply a final multiplication of the solution with the diagonal balancing matrix
+$D$ which alters the norm in uncontrollable ways. We do not need this rebalancing of $H$ however if
+we know the eigenvalues of $H$, since we then know the effect of $\l$ on the condition number of
+$H+\l I$.
+
+All this is complicated and still does not resolve the question of determining a useful trust radius $r$. In practice
+this is handed by starting with a reasonbable guess and adjusting $r$ in each step based on the performance in the last step.
+This is imperfect and in particular leaves the following question: 
+
+\textit{why would a spherical region $B_r(x)$ be preferred as
+a trust region for the quadratic approximation $\ol f$ of $f$ centered at $x$?}
+
+In fact a reasonable trust region has the form $|f(x+p)-\ol f(x+p)|<\epsilon$ and it can have any shape whatsoever,
+certainly it does not need to be spherical. Given the difficulties with spherical trust regions outlined above this is
+certainly a reasonable question to ask.
+
+Now let us recall the backtracking line search. In this approach we simply minimize the objective
+function $f$ on the line segment
+$$
+[x,x+p^H]=\{\ths x+t p^H\ths:\ths t\in[0,1]\ths\}.
+$$
+I.e. we make the full Newton step $p^H$ and backtrack from there in a straight line. This is certainly a much
+simpler approach. In this regard it is interesting to note that backtracking line search can also be motivated 
+via trust regions of a different shape, namely of the form
+$$
+D_r(x) = \{\ths x+p\ths:\ths p'Hp\leq r\ths\}.
+$$
+This is an elliptical region centered at $x$ defined by the Hessian $H$ of $f$ at $x$. Suppose now we try to minimize
+the quadratic approximation $\ol f$ on $D_r(x)$ by adding a penalty term $\frac{\l}{2}p'Hp$ to $\ol f(x+p)$ (for some 
+fixed value $\l>0$) and minimizing $\ol f$ plus the penalty term globally, i.e. minimize the function
+$$
+\ol f_s(x+p) = \ol f(x+p)+\frac{\l}{2}p'Hp = f(x)+g'p+\frac{1+\l}{2}p'Hp
+$$
+as a function of the step $p$ leading to the equation
+$$
+(1+\l)Hp=-g.
+$$
+Clearly the solution $p(\l)$ is simply given by
+$$
+p(s)=\frac{1}{1+\l}p^H
+$$
+i.e. corresponds to a backtracking operation on the line segment $[x,x+p^H]$. Now exactly the same argument as
+in the proof of proposition \ref{prop:f_eps_min} shows that
+%
+\begin{prop}
+\label{prop:back_track}
+The step $p(\l)=(1+\l)^{-1}p^H$ minimizes the quadratic approximation $\ol f(x+p)$ on the region
+$p'Hp\leq r(\l)$ where $r(\l)=p(\l)'Hp(\l)$.
+\end{prop}
+%
+\textbf{Proof.} $p(\l)$ is the global minimizer of $\ol f(x+p)+(\l/2)p'Hp$. Now assume that
+$p'Hp\leq p(\l)'Hp(\l)$. Then
+$$
+\ol f(p(\l))+\frac{\l}{2}p'Hp \leq 
+\ol f(p(\l))+\frac{\l}{2}p(\l)'Hp(\l)\leq
+\ol f(p)+\frac{\l}{2}p'Hp
+$$
+which implies that $\ol f(p(\l))\leq\ol f(p)$.\qed
+
+As in the case of spherical trust regions this concerns only the minimum of the quadratic approximation
+$\ol f$ of $f$ not the objective function $f$ itself and leaves open the question of where this approximation
+can be trusted. But there is no reason to prefer spherical trust regions to elliptical ones.
+
+In this case however this entire question becomes irrelevant since we can simply minimize the objective 
+function $f$ itself on the line segment $[x,x+p^H]$ which can be done by a line search algorithm.
+
+One idea is to mix the two approaches (backtracking line search and spherical trust region): first
+compute $p(\l)$ by backtracking line search (exact optimization), then define the trust radius $r$
+as $r=\norm{p(\l)}$ and minimize on the spherical trust region $B_r(x)$ with one of the approaches 
+above.
+
+\begin{example}
+\label{example:rosenbrook}
+As an example let us consider the notorious Rosenbrook function
+%
+\begin{equation}
+\label{rosenbrook_fn}
+f(x,y)=(x-a)^2+b(y-x^2)^2
+\end{equation}
+%
+The global minimum is at $(x,y)=(a,a^2)$ and the function is nasty if $b$ is big, e.g. $a=1$, $b=100$.
+We have
+%
+\begin{align*}
+f_x &= 2(x-a)-4b(y-x^2)x,\q f_y=2b(y-x^2),\q\text{and thus}\\
+f_{xx} &= 2-4b(y-3x^2),\q f_{xy}=f_{yx}=-4bx,\text{ and }f_{yy}=2b.
+\end{align*}
+%
+The function itself is a polynomial and the quadratic Taylor approximation $\ol f(h,k)$ of $f(x+h,y+k)$ contains
+all the second order terms in $h$, $k$ while the residual $f(x+h,y+k)-\ol f(h,k)$ contains the rest and is easily 
+seen to be the quantity
+$$
+f(x+h,y+k)-\ol f(h,k) = h^2(bxh+h^2-2bk)
+$$
+Thus reasonable trust regions for this function have the form
+$$
+|h^2(bxh+h^2-2bk)|\leq\epsilon
+$$
+and are neither spherical nor elliptical.\qed
+\end{example}
+%
+
+
+
+

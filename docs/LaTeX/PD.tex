@@ -1,0 +1,296 @@
+
+
+%\documentclass[fleqn]{scrartcl}
+\documentclass{book}
+\usepackage{bm}
+\usepackage[latin1]{inputenc}
+%\usepackage[dvips]{hyperref}  % creates links in pdf and ps
+%\usepackage[pdftex]{hyperref}  % creates links in pdf and ps
+\usepackage[T1]{fontenc}
+%\usepackage{a4}
+%\usepackage[ngerman]{babel}
+%\usepackage{german}          % conflicts with tikz-cd
+\usepackage[
+nosumlimits,
+nointlimits
+]{mathtools}   %% loads package amsmath
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{url}
+\usepackage{curves}
+
+
+\usepackage{mathbbol}
+\usepackage{bbm}
+\usepackage{tabularx}
+\usepackage{enumerate}
+
+
+
+
+%\usepackage{dsfont}
+%\usepackage[pdftex]{graphicx}
+%\usepackage{graphicx}
+%\usepackage{epstopdf}
+
+%%% including figures
+%\usepackage{subfigure}
+%\usepackage{float}
+%
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{tikz-cd}
+
+
+
+
+\usepackage{listings}
+% definition for the scala language
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,%
+    do,else,extends,false,final,finally,%
+    for,if,implicit,import,match,mixin,%
+    new,null,object,override,package,%
+    private,protected,requires,return,sealed,%
+    super,this,throw,trait,true,try,%
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]"""
+}
+% IntelliJ code style and coloring
+\usepackage{xcolor}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+% Default settings for code listings
+%
+\lstset{frame=tb,
+   language=scala,
+   aboveskip=3mm,
+   belowskip=3mm,
+   showstringspaces=false,
+   columns=flexible,
+   basicstyle={\small\ttfamily},
+   numbers=none,
+   numberstyle=\tiny\color{gray},
+   keywordstyle=\color{blue},
+   commentstyle=\color{dkgreen},
+   stringstyle=\color{mauve},
+   frame=single,
+   breaklines=true,
+   breakatwhitespace=true
+   tabsize=3
+}
+
+
+\newcommand{\code}[1]{\textcolor{dkgreen}{\textsf{\footnotesize #1}}}
+\newcommand{\trace}[1]{\text{tr}(#1)}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\grad}{\nabla}
+
+
+%% mathematical symbols
+%%
+\newcommand\sym{{\ths sym}}
+\renewcommand\skew{{\ths skew}}
+\newcommand\q{\quad}
+\newcommand\nrm{\|\cdot\|}
+\newcommand\smallnorm[1]{\|#1\|}
+\newcommand\norm[1]{\left\|#1\right\|}
+\newcommand\la{\langle}
+\newcommand\ra{\rangle}
+\newcommand\lb{\lbrack\!\lbrack}
+\newcommand\rb{\rbrack\!\rbrack}
+\newcommand\oo{\infty}
+\newcommand\emb{\hookrightarrow}
+\newcommand\idfy{\longleftrightarrow}
+\newcommand\ths{\thinspace}
+\newcommand\bt{\kern1pt\raise1pt\hbox{$\scriptstyle\bullet$}\kern1pt}
+\newcommand\leaderfill{\leaders\hbox to 1em{\hss.\hss}\hfill}
+\renewcommand\qed{\ \vrule height4pt width2pt depth2pt}
+\newcommand\ed{\stackrel{d}{=}}
+\newcommand\1{\uparrow}
+
+%% norm with 3 vertical bars:
+\newcommand{\normIII}[1]{{
+\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 
+\right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert
+}}
+
+
+
+%% Greek letters
+%%
+\renewcommand\l{\lambda}
+\newcommand\s{\sigma}
+
+
+%% calligraphic letters
+%%
+
+\newcommand\A{{\mathcal A}}
+\newcommand\B{{\mathcal B}}
+\newcommand\C{{\mathcal C}}
+\newcommand\D{{\mathcal D}}
+\newcommand\E{{\mathcal E}}
+\newcommand\F{{\mathcal F}}
+\newcommand\G{{\mathcal G}}
+\renewcommand\H{{\mathcal H}}
+\newcommand\K{{\mathcal K}}
+\renewcommand\L{{\mathcal L}}
+\newcommand\M{{\mathcal M}}
+\renewcommand\P{{\mathcal P}}
+\newcommand\Q{{\mathcal Q}}
+\newcommand\T{{\mathcal T}}
+\newcommand\I{{\mathcal I}}
+%\renewcommand\R{{\mathcal R}}
+\renewcommand\S{{\mathcal S}}
+\newcommand\X{{\mathcal X}}
+\newcommand\Y{{\mathcal Y}}
+\newcommand\Z{{\mathcal Z}}
+
+%% ams special font
+\newcommand\bbB{{\mathbb B}}
+\newcommand\bbE{{\mathbb E}}
+\newcommand\bbF{{\mathbb F}}
+\newcommand\bbH{{\mathbb H}}
+\newcommand\bbK{{\mathbb K}}
+\newcommand\bbN{{\mathbb N}}
+\newcommand\bbP{{\mathbb P}}
+\newcommand\bbC{{\mathbb C}}
+\newcommand\bbR{{\mathbb R}}
+\newcommand\bbT{{\mathbb T}}
+
+
+\renewcommand\b[1]{\textbf{#1}}
+\newcommand\bfF{\textbf{F}}
+\newcommand\bfX{\textbf{X}}
+\newcommand\bfM{\textbf{M}}
+\newcommand\bfP{\textbf{P}}
+\newcommand\bfH{\textbf{H}}
+\newcommand\bfU{\textbf{U}}
+\newcommand\ones{\mathbb{1}}
+\newcommand\bfb{\textbf{b}}
+\newcommand\bfe{\textbf{e}}
+\newcommand\bfeps{{\bm\epsilon}}
+\newcommand\bft{\textbf{t}}
+\newcommand\bfu{\textbf{u}}
+\newcommand\bfy{\textbf{y}}
+\newcommand\hby{\hat{\textbf{y}}}
+\newcommand\olby{\overline{\textbf{y}}}
+\newcommand\sep{{\ths\big|\ths}}
+
+
+
+%% probability
+\newcommand\probspace{(\Omega,\F,P)}
+\newcommand\EP{\bbE^P}
+\newcommand\olP{{\ol P}}
+\newcommand\olb{{\ol b}}
+\newcommand\olB{{\ol B}}
+
+%% misc
+\newcommand\ol{\overline}
+\newcommand\onehalf{\frac{1}{2}}
+\newcommand\one{{\mathbb 1}}
+
+\newcommand*\colvec[3][]{
+    \begin{pmatrix}\ifx\relax#1\relax\else#1\\\fi#2\\#3\end{pmatrix}
+}
+%use \colvec[a]{b}{c} for three elements or \colvec{a}{b} for two
+
+
+%
+% improve list spacing .
+%
+\newenvironment{packed_enum}{
+\begin{enumerate}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{enumerate}}
+
+\newenvironment{packed_itemize}{
+\begin{itemize}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{itemize}}
+
+
+
+
+\theoremstyle{plain}% default
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem*{cor}{Corollary}
+\newtheorem*{KL}{Klein's Lemma}
+\newtheorem{bem}[thm]{Bemerkung}
+
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{conj}{Conjecture}[section]
+\newtheorem{example}{Example}[section]
+
+
+\theoremstyle{remark}
+\newtheorem*{rem}{Remark}
+\newtheorem{case}{Case}
+
+\newcommand\Proof{
+\medskip\noindent
+\textit{Proof.}
+}
+\newcommand\Remark{
+\medskip\noindent
+\textit{Remark.}
+}
+
+
+
+
+\newif\iftoc
+%\toctrue
+\tocfalse
+
+
+\begin{document}
+
+
+\iftoc
+\tableofcontents
+\newpage
+\fi
+ 
+
+
+\input{PD_0}
+\input{PD_1}
+\input{PD_2}
+
+
+
+\begin{thebibliography}{4}
+
+\bibitem{NW} Jorge Nocedal, Stephen J. Wright
+\textit{Numerical Optimization}, 2nd edition, 2006, Springer Verlag.
+
+\bibitem{NG} Nick Gould,
+\textit{Trust-region methods for unconstrained optimization},\\
+\url{https://www.numerical.rl.ac.uk/people/nimg/msc/lectures/part3.2.pdf}
+
+\end{thebibliography}
+
+
+\end{document}
+
+
+
+
+
+

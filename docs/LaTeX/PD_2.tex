@@ -1,0 +1,352 @@
+\subsection{Iteration to refine $\lambda$}
+\label{sec:lambda_iter}
+
+Recall that we want to find a regularization parameter $\l>0$ such that the solution $p(\l)$ of the equation
+$(H+\l I)p=-g$ satisfies $\tilde r:=\norm{p(\l)}\approx r$, where $r$ is the value of the trust radius.
+
+Here we have a reasonable guess for a starting value $\l_0=\norm g/\sqrt r$ which however overestimates $\l$
+in every case ($\l_0$ is too large). This means that $p(\l)$ will certainly be in $B_r(x)$ but may be very close to the current
+iterate $x$, which is undesirable unless this iterate is already close to the minimizer of $f$.
+See equation (\ref{lambda_eq_1}) in section \ref{sec:dog_leg_regularized} and subsequent discussion.
+
+With one single eigenvalue or Schur decomposition of $H+\l_0 I$ a cheap iterative algorithm to refine $\l$
+can be implemented. However we want to work with Cholesky factorizations (since these are both more accurate 
+and much faster than both the Schur decomposition and the Eigenvalue decomposition). Moreover we want to keep the 
+number of Cholesky factorizations to a minimum.
+
+In reference \cite{NG} such an iteration for $\l$ is developped which however requires a Cholesky factorization of
+$H+\l I$ for each new value of $\l$. We can get the iteration from the Cholesky factorization of 
+$$
+H+\l I=LL'
+$$
+as follows:
+%
+\begin{align}
+\label{lambda_iter} 
+\l_{next} &= \l+\frac{\norm{p(\l)}-r}{r}\times\frac{\norm{p(\l)}^2}{\norm{w}^2},\q\text{where}\\\notag
+Lw &= p(\l).
+\end{align}
+%
+However we do then need a second Cholesky factorization of $H+\l_{next}I$ to compute the new step $p(\l_{next})$.
+
+
+
+
+
+\section{Line search methods}
+\label{sec:line_search}
+
+A robust line search is the backbone of our optimization routines. At the current iterate $x$ we have a direction $p^H$ 
+(the full Newton step) and the global minimizer $x^H:=x+p^H$ of the quadratic Taylor approximation  $\ol f$ of the objective 
+function $f$. 
+
+As a first step we minimize $f$ on the line segment $[x,x+p^H]$, that is we minimize the function
+$$
+\phi(t)=f(x+tp^H),\q t\in[0,1].
+$$
+In principle we have both the first and second derivative of $\phi$ as
+$$
+\phi'(t)=\nabla f(x+tp^H)\cdot p^H
+\q\text{and}\q
+\phi''(t)=(p^H)'H(x+tp^H)p^H,
+$$
+where $H(z)$ is the Hessian of $f$ at $z$. Here the computation of values of $f$ is relatively cheap, 
+but the gradient is more expensive and the Hessian is most expensive. For this reason we only discuss methods that make no use
+of the second derivative. This rules out the Newton method. 
+
+In practice we will not be able to avoid the use of the first derivative since line search termination conditions are based on 
+derivative information.  
+
+\subsection{Methods which do not use derivative information}
+
+We start with methods that use only the values of the objective function $\phi$ but not the derivative $\phi'$.
+
+\subsubsection{Golden Search} 
+\label{sec:golden_search}
+
+Suppose we want to minimize a function $\phi=\phi(t)$ on the interval $[0,1]$. The algorithm produces a
+sequence triples $0\leq a_k<c_k<b_k\leq 1$. The point $c_k$ splits the current interval $[a_k,b_k]$ which
+brackets a minimizer and the search continues in one of the subintervals $[a_k,c_k],[c_k,b_k]\subseteq[a_k,b_k]$.
+
+\noindent
+The split maintains the invariant
+%
+\begin{equation}
+\label{inv1}
+|I|=\rho|J|,
+\end{equation}
+%  
+where $I$ is the longer and $J$ the shorter of the subintervals $[a_k,c_k],[c_k,b_k]\subseteq[a_k,b_k]$.
+The following invariant is also maintained, once it is obtained:
+
+%
+\begin{equation}
+\label{inv2}
+\phi(c_k)\leq\min(\phi(a_k),\phi(b_k))
+\end{equation}
+%  
+This condition ensures that the open interval $(a_k,b_k)$ contains a local minimum of $\phi$. If this
+condition is never obtained (boundary minimum), then each triple contains the best minimizer found so far.
+The points are spaced in such a fashion that the length of the interval $[a_k,b_k]$ decreases geometrically. 
+
+In the description below we assume that condition (\ref{inv2}) has been obtained, the other case being trivial.
+The algorithm proceeds as follows: we split the larger of the two subinterval $[a_k,c_k]$ and $[c_k,b_k]$, 
+\textit{wolog} the interval $[c_k,b_k]$ into subintervals $[c_k,d_k]$ and $[d_k,b_k]$. There are now two cases:
+
+\medskip\noindent
+(A) $\phi(d_k)\leq\phi(c_k)$. Then we have $\phi(d_k)\leq\min\{\phi(c_k),\phi(b_k)\}$ and we can replace the triple
+$a_k<c_k<b_k$ with the triple $c_k<d_k<b_k$.
+
+\medskip\noindent
+(B) $\phi(c_k)\leq\phi(d_k)$. Then we have $\phi(c_k)\leq\min\{\phi(a_k),\phi(d_k)\}$ and we can replace the triple
+$a_k<c_k<b_k$ with the triple $a_k<c_k<d_k$.
+
+In every case the invariant (\ref{inv2}) is maintained. The question now becomes how we place the point $d_k$.
+We have $a_k<c_k<d_k<b_k$. Let
+$$
+\alpha=c_k-a_k,\ \beta=d_k-c_k\text{ and }\gamma=b_k-d_k
+$$
+the length of the three subintervals. Since the next interval will either be $[a_k,d_k]$ or $[c_k,b_k]$ it is 
+reasonable to require that these have the same length, i.e. $\alpha+\beta=\beta+\gamma$ from which we obtain
+$$
+\alpha=\gamma.
+$$
+Next we require that the proportion in the spacing between the points be maintained by passing from 
+the triple $(a_k,c_k,b_k)$ to the triple $(c_k,d_k,b_k)$, i.e.: 
+$$
+\frac{\alpha}{\beta+\gamma}=\frac{\beta}{\gamma}
+\q\text{i.e.}\q
+\frac{\alpha}{\beta+\alpha}=\frac{\beta}{\alpha}:=\rho.
+$$
+Note that this implies $\alpha>\beta$ and thus $\rho=\beta/\alpha$ is also the corresponding ratio for the triple 
+$(a_k,c_k,d_k)$. It follows that this ratio is maintained as an invariant of the algorithm in both cases (A) and (B). 
+
+\noindent
+Dividing by $\alpha$ we obtain $\rho=1/(1+\rho)$, i.e. $\rho^2+\rho-1=0$ from which 
+$$
+\rho=(\sqrt{5}-1)/2
+$$
+is the golden ratio. Let us note in passing that the relation $\rho=1/(1+\rho)$ implies that all the continued 
+fractions $[1,1,\dots,1,\rho]$ are equal to $\rho$. To see this, simply replace $\rho$ in the fraction $1/(1+\rho)$
+with $1/(1+\rho)$ and continue such replacements.
+
+\noindent
+Note that the spacing of the point $c_k$ is given by the fraction
+$$
+\frac{b_k-c_k}{b_k-a_k}=
+\frac{\beta+\gamma}{\alpha+\beta+\gamma}=
+\frac{\alpha+\beta}{\alpha+\beta+\alpha}=
+\frac{1}{1+\alpha/(\alpha+\beta)}=
+\frac{1}{1+\rho}=\rho.
+$$
+
+The new interval is $[c_k,b_k]$ or $[a_k,d_k]$, both of equal length.
+Thus the interval length $b_k-a_k$ decreases geometrically by a factor of $\rho=0.618034$ in each step. 
+We have seen above that $\rho=\alpha/(\beta+\gamma)$ and so
+$$
+\frac{c_k-a_k}{b_k-c_k}=\frac{\alpha}{\beta+\gamma}=\rho=\frac{b_k-c_k}{b_k-a_k}
+$$
+i.e.: the fraction of the shorter to the longer subinterval = the fraction of the longer subinterval to the whole.
+This is the rule of the Golden Ratio and that is where this method derives its name.
+
+In this description we have \textit{assumed} that $[c_k,b_k]$ is the longer subinterval of $[a_k,b_k]$.
+But not in general will the longer subinterval be the interval on the right. Suppose for example that we pass to the
+triple $(a_k,c_k,d_k)$. We have seen above that $\alpha>\beta$, i.e. in this triple $[a_k,c_k]$ is the longer subinterval
+and is the interval that has to be split in the next step.
+
+\medskip\noindent
+\textbf{Algorithm:} start with $a_k=0$, $b_k=1$ and set $c_k=\rho$. Given any triple $(a_k,c_k,b_k)$
+where the point $c_k$ splits the interval $[a_k,b_k]$ such that 
+$$
+\text{longer subinterval}=\rho\times\text{full interval}
+$$
+split the longer subinterval with the point $d_k$ in the same proportion and such that these proportions
+are maintained in both subsequent triples (this determines if the shorter subinterval is on the right or
+on the left).
+
+This gives us two new triples of points $(a_k,c_k\wedge d_k, c_k\vee d_k)$ and $(c_k\wedge d_k, c_k\vee d_k, b_k)$.
+Move to the triple which contains the best minimizer so far. 
+
+\subsubsection{Quadratic Interpolation}
+\label{sec:quadratic_approx}
+ 
+Given a triple of points $a<c<b$ with associated values $\phi(a)$, $\phi(b)$ and $\phi(c)$ we now approximate 
+$\phi$ with a quadratic polynomial $P(t)$ which interpolates the points $(a,\phi(a))$, $(b,\phi(b))$ and $(c,\phi(c))$,
+then minimize this polynomial for a final candiate point for the minimum. Finally we retain the point at which the
+smallest value of $\phi$ so far occurs.
+
+This is suitable for mixing with the strategy of Golden Search since at each iteration of Golden search we have exactly 
+such a triple of points.
+
+\noindent
+Note that $P(t)$ has the form
+$$
+P(t)=
+\phi(a)\frac{(t-b)(t-c)}{(a-b)(a-c)}+
+\phi(b)\frac{(t-a)(t-c)}{(b-a)(b-c)}+
+\phi(c)\frac{(t-a)(t-b)}{(c-a)(c-b)}.
+$$
+from which it follows that
+$$
+P'(t)=
+\phi(a)\frac{2t-(b+c)}{(a-b)(a-c)}+
+\phi(b)\frac{2t-(a+c)}{(b-a)(b-c)}+
+\phi(c)\frac{2t-(a+b)}{(c-a)(c-b)}.
+$$
+Setting the derivative equal to zero yields
+%
+\begin{align*}
+t &= N/D,\q\text{where}\\
+N &= 
+\phi(a)\frac{b+c}{(a-b)(a-c)}+
+\phi(b)\frac{a+c}{(b-a)(b-c)}+
+\phi(c)\frac{a+b}{(c-a)(c-b)}\q\text{and}\\
+D &= \phi(a)\frac{2}{(a-b)(a-c)}+
+\phi(b)\frac{2}{(b-a)(b-c)}+
+\phi(c)\frac{2}{(c-a)(c-b)}.
+\end{align*}
+%
+Here we need to check that $P''(t)>0$ to verify that the interpolating polynomial $P$ does assume a minimum. 
+To this end we note that $P''(t)=D$, for all $t$. Note that the above formulas can be simplified by multiplying
+both $N$ and $D$ with $(a-b)(a-c)(b-c)>0$ to obtain
+%
+\begin{equation}
+\label{q2_min} 
+t=\frac{1}{2}\times
+\frac{
+\phi(a)(b^2-c^2)+\phi(b)(c^2-a^2)+\phi(c)(a^2-b^2)}
+{\phi(a)(b-c)+\phi(b)(c-a)+\phi(c)(a-b)}.
+\end{equation}
+%
+and we note that $P''(t)$ has the same sign as the new denominator.
+
+
+\subsection{Methods which use the first derivative}
+
+Now we move on to  methods which use the first derivative
+$$
+\phi'(t)=\nabla f(x+tp^H)\cdot p^H.
+$$
+
+\subsubsection{Quadratic Interpolation}
+\label{sec:quadratic_approx_deriv}
+
+With derivative information we need only two points to determine the quadratic interpolating polynomial.
+Say we have points $a,b$ and associated values $\phi(a)$, $\phi(b)$ as well as the derivative $\phi'(a)$.
+Then there is a unique quadratic polynomial $P(t)$ which interpolates $\phi$ at the points $(a,\phi(a))$ and $(b,\phi(b))$
+and which satisfies $P'(a)=\phi'(a)$. We then minimize this polynomial to obtain a new candidate point.
+
+\noindent
+Develop $P$ centered at $a$ to obtain
+$$
+P(t)=\phi(a)+\phi'(a)(t-a)+q(t-a)^2,
+$$
+where the coefficient $q$ is determined from the equation $P(b)=\phi(b)$ yielding
+$$
+q=\frac{\phi(b)-\phi(a)-\phi'(a)(b-a)}{(b-a)^2}
+$$
+and setting the derivative $P'(t)=0$ we obtain the location of the minimum as 
+%
+\begin{equation}
+\label{q2_deriv_min}
+t = a-\frac{\phi'(a)}{2q}.
+\end{equation}
+% 
+Here we need to check that $q>0$ to ensure that the interpolating polynomial does in fact have a minimum.
+
+
+\subsection{Trust radius from line search}
+\label{sec:line_search_trust_radius}
+
+Since the line search is relatively cheap we can try to derive a guess for the trust radius based on a study of the 
+objective function $f$ on the line segment $[x,x+p^H]$. Clearly the global minimizer $x+p^H$ of the quadratic approxiation
+$\ol f$ of $f$ also minimizes $\ol f$ on this line segment. Actually the quadratic approximation $\ol f(x+tp^H)$ is \textit{decreasing}
+on this entire line segment.
+
+To see this recall that $p:=p^H$ is the solution of $Hp=-g$, where $g=\nabla f(x)$ and $H=\nabla^2f(x)$ is the hessian of $f$ at the current
+iterate $x$. With this the quadratic approximation $\ol f$ has the form
+$$
+\ol f(x+h)=f(x)+g'h+\frac{1}{2}h'Hh
+$$
+and especially for $h=tp$, $t\in[0,1]$ we obtain
+$$
+\ol f(x+tp)=f(x)+tg'p+\frac{1}{2}t^2p'Hp
+$$
+from which, using $Hp=-g$,
+$$
+\frac{d}{dt}\ol f(x+tp)=g'p-tg'p=(1-t)g'p
+$$
+However it is easy to see that $g\cdot p<0$ by writing both $g$ and $p$ as linear combinations of the eigenvectors of $H$.
+Indeed this is true for all the steps $p(\l)$ computed as the solutions of the regularized Newton equation $(H+\l I)p=-g$,
+where $\l\geq 0$. Indeed, if $Hu_j=\l_ju_j$ and 
+$$
+g=\sum_ja_ju_j
+$$ 
+then the solution $p(\l)$ of $(H+\l I)p=-g$ is given by
+$$
+p(\l)=-\sum\frac{a_j}{\l_j+\l}u_j,
+$$
+where all the eigenvalues $\l_j$ are strictly positive (convexity of $f$).  It readily follows that
+$$
+g'p(\l)=g\cdot p(\l)=-\sum_j\frac{a_j^2}{\l_j+\l}<0,
+$$
+i.e every step $p(\l)$ is a step in a descent direction of $f$ and we have
+%
+\begin{align*}
+\frac{d}{dt}\ol f(x+tp(\l))&=
+g'p(\l)+tp(\l)'Hp(\l)\\&=
+g'p(\l)+tp(\l)'(H+\l I)p(\l)-t\l\norm{p(\l)}^2\\&=
+(1-t)g'p(\l)-t\l\norm{p(\l)}^2=
+g'p(\l)-t(g'p(\l)+\l\norm{p(\l)}^2).
+\end{align*}
+%
+Assume now that $\l\geq 0$ is so small that $g'p(\l)+\l\norm{p(\l)}^2$ is still negative. Then 
+%
+\begin{equation}
+\label{line_decrease}
+\frac{d}{dt}\ol f(x+tp(\l))\leq 0,\q\text{for all }0\leq t\leq\frac{g'p}{g'p+\l\norm{p(\l)}^2}.
+\end{equation}
+%
+So for $\l=0$, where $p(\l)=p^H$ is the full Newton step, this derivative is negative, and hence the 
+quadratic approximation $\ol f$ decreasing, on the full interval $[0,1)$. For the steps $p(\l)$
+this holds on an even larger interval $[0,1+\epsilon)$ but these steps are smaller than the full Newton step.
+This means that the quadratic approximation will always assume its minimum at the point $x+p$ on the line segment
+$[x,x+p]$.
+
+Now this is not necessarily true also for the objective function $f$ itself and this is where we can get information 
+about the trust radius: the maximum value for the trust radius would be the size $r=\norm{p}$ of the full step $p$. 
+However if we detect that the objective function $f(x+tp)$ assumes its minimum at a point $t<1$, then the trust radius 
+needs to be reduced below the value $r=t\norm{p}$. 
+
+\noindent
+This applies to the full Newton step $p=p^H$ as well as to the regularized Newton steps $p=p(\l)$ and suggests 
+the following algorithm: start off with a small value of $\l$, e.g. $\l=\min(0.001,\norm{g}/10)$ and compute the 
+corresponding point $p(\l)$. Now conduct golden search on the line segment $[x,x+p(\l)]$. 
+
+At every triple $a<c<b$ the quadratic approximation $\ol f$ satisfies $\ol f(a)>\ol f(c)>\ol f(b)$ and the expectation 
+is that the objective function $f$ satisfies the same inequalities. So long as this is the case we continue with 
+golden search, always moving to the right (choose the triple containing the current minimizer $b$).
+
+If the inequality $f(a)>f(c)>f(b)$ is maintained for three or four iterations, the trust radius $r$ is set equal
+to $\norm{p(\l)}$. 
+
+\noindent
+When these inequalities fail for the first time there are two possibilities:
+
+\smallskip\noindent
+(A) $f(a)$ is the smallest value. We reduce the trust radius to $r=a\norm{p(\l)}$ and refine $\l$ as described in
+section \ref{sec:lambda_iter}.
+
+\smallskip\noindent
+(B) $f(c)$ is the smallest value. Then we know that the quadratic polynomial interpolating the points
+$(a,f(a))$, $(b,f(b))$ and $(c,f(c))$ must have its minimum in the open interval $(a,b)$. We compute the location
+of this minimum as described in section \ref{sec:quadratic_approx} and either continue to narrow down the location 
+of the local minimum or reduce the trust radius immediately to the value $r=t_*\norm{p(\l)}$, where $t_*$ is the 
+location of the current minimum in the interval $(0,1)$.
+
+
+
+
+
+
+ 

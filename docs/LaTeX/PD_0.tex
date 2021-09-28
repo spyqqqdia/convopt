@@ -1,0 +1,458 @@
+\chapter{Primal-Dual Methods}
+
+In this section we consider methods which compute the primal and dual variables
+(Lagrange multipliers) simultaneously. We start with the case of a quadratic objective function.
+
+\section{Quadratic programming}
+
+\subsection{Introduction}
+\label{subsec:qp_intro}
+
+The minimization of quadratic functions will be an important tool for the minimization of
+general nonlinear function $f$. This comes about as follows: the minimization of a general,
+$C^2$-function $f$ proceeds by iteration. We start from some point $x_0$ and proceed through 
+a series of iterates $x_k$ hopefully convergent to the minimizer $x_*$ of $f$. 
+
+Given iterate $x_k$ we want to find the step $p_k:= x_{k+1}-x_k$ that gets us to the next  
+iterate $x_{k+1}$. To do this we approximate $f$ by the quadratic Taylor polynomial centered at
+the current iterate $x_k$
+%
+\begin{equation}
+\label{TP2}
+\ol f(x_k+p) = f_k + g_k'p+\tfrac{1}{2}p'H_kp,
+\end{equation}  
+%
+where $f_k:=f(x_k)$, $g_k=\nabla  f(x_k)$ is the gradient and $H_k=D^2f(x_k)$ the Hessian of $f$ 
+at $x_k$ which is assumed to be \textit{positive definite}. This approximation is accurate only 
+locally and hence we trust it only on a ball
+$$
+B_r(0)=\{\ths p\in\bbR^n\ths:\norm p\leq r\ths\}
+$$
+of some sufficiently small radius $r$. This radius $r=r_k$ will be chosen using some heuristics 
+in each step.
+
+With this we want to minimze the quadratic function $h(p)=\ol f(x_k+p)$ on the ball $B_r(0)$
+and let $p_k$ be that minimizer. With this $x_{k+1}$ becomes the minimum of the quadratic 
+approximation $\ol f$ on the ball $B_r(x_k)$ and is guaranteed to satisfy 
+$\ol f(x_{k+1})\leq \ol f(x_k)=f_k=f(x_k)$.
+
+However $x_{k+1}$ is not necessarily the locus of the minimum of $f$ on the ball $B_r(x_k)$.
+To check whether we have made sufficient progress we must evaluate $f(x_{k+1}$ and check if we   
+have a sufficient decrease from the value of $f(x_k)$.
+
+From the study of iterative solutions based on line searches (Wolf-condition) we know that it
+is sufficient to decrease the value of $f$ by a constant multiple of the optimal decrease 
+\textit{of the linear approximation}
+%
+\begin{equation}
+\label{TP1}
+\tilde f(x_k+p) = f_k + g_k'p,
+\end{equation}  
+%
+as this will imply convergence to a minimizer possibly requiring a very large number of steps.
+This motivates the definition of the 
+
+\subsubsection{Cauchy point}
+\label{subsubsec:CauchyPoint} 
+
+Note that $g_k=\nabla f(x_k)$ is also the gradient $\nabla\ol f(x_k)$ of the quadratic 
+approximation $\ol f$ at the point $x_k$. The \textit{Cauchy point}  $x^C_{k+1}(r)$ is defined 
+as the minimizer $x$ \textit{of the quadratic approximation} $\ol f$ on the line $x=x_k-tg_k$ 
+of steepest descent from the point $x_k$ subject to the condition $\norm{x-x_k}\leq r$:
+%
+\begin{align}
+\label{Cauchy point}
+x^C_{k+1}(r) &:= x_k-t_*g_k,\q\text{where}\\
+t_* &= argmin_{t\geq 0}\ths\ol f(x_k-tg_k),\q\text{subject to }\norm{tg_k}\leq r.
+\end{align}
+%
+Here we assume that $g_k=\nabla f(x_k)\neq 0$ since the minimization algorithm terminates 
+as soon as a zero gradient is encountered. Clearly this is equivalent to
+$$
+t_* = argmin_{t\in[0,r/\norm{g_k}}g(t)\q\text{where }g(t)=\ol f(x_k-tg_k).
+$$
+Since we are minmizing the quadratic approximaton $\ol f$ and not the function $f$ itself,
+$t_*$ and hence the Cauchy point can be found explicitly: we have
+$$
+g(t)=f_k-t\norm{g_k}^2+\tfrac{1}{2}t^2g_k'H_kg_k
+$$
+This polynomial has its global minimum at $t_0=\norm{g_k}^2/g_k'H_kg_k$ and $g(t)$ is strictly 
+decreasing from $t=0$ to this point. Thus to observe the condition $t\leq r/\norm{g_k}$ we can
+simply cut off $t$ at this bound if the global solution $t_0$ is too large:
+%
+\begin{equation}
+\label{t_*}
+t_* = \min\left\{\ths
+\frac{r}{\norm{g_k}},\ths\frac{\norm{g_k}^2}{g_k'H_kg_k}\ths\right\}.
+\end{equation}
+%    
+With this the condition for the sufficient 
+decrease in the value of the objective function $f$ then has the form
+%
+\begin{equation}
+\label{sufficient_decrease}
+f(x_k)-f(x_{k+1})\geq\kappa(f(x_k)-f(x^C_{k+1}(r))).
+\end{equation}  
+%
+In the development above the objective function $f$ has been replaced with its quadratic 
+approximation $\ol f$ (second order Taylor polynomial) and each step of the iterative
+algorithm only depends on this approximation (centered at the current iterate). 
+
+We can therefore abstract from this setting of iterative solution and study the quadratic 
+problem in isolation.
+
+
+\section{Quadratic minimization}
+\label{sec:QP}
+
+As a warmup we start with quadratic minimization under equality constraints as this will 
+introduce some of the important notions. Thereafter we turn to quadratic approximation on 
+a ball (the trust region).
+
+
+\subsection{Quadratic problem with equality constraints only}
+\label{subsec:QP_with_eqs}
+
+Consider first the case where there are no inequality constraints (and hence no
+complementary slackness conditions in the first order KKT equations). The problem reads
+%
+\begin{align}
+\label{qp}
+? &= argmin_x\ths f(x) = argmin_x\ths c'x+\tfrac{1}{2}x'Gx\q\text{subject to}
+\\\label{lc}
+Ax &= b,  
+\end{align}
+%
+where $G$ is a symmetric $n\times n$-matrix, $A$ an $m\times n$-matrix with 
+$1\leq m<n$ rows, $x\in\bbR^n$ and $b\in\bbR^m$.
+
+We assume that $A$ has full rank and hence $dim(ker(A))=n-m$. Let $Z$ be a 
+kernel matrix for $A$, that is the columns of $Z$ form a basis for the kernel 
+of $A$. Then $Z$ is an $n\times(n-m)$ matrix of full rank satisfying $AZ=0$.
+
+We say that $G$ is positive semidefinite on the kernel of $A$ if we have
+%
+\begin{equation}
+\label{psd_on_kerA}
+v'Gv\geq 0,\q\forall v\in ker(A),
+\end{equation}  
+%
+equivalently if the matrix $Z'GZ$ is positive semidefinite. (Strict) positive 
+definiteness of $G$ on the kernel of $A$ is defined analogously and is 
+equivalent to the matrix $Z'GZ$ being positive definite.
+
+Note that the kernel of $A$ describes the degrees of freedom in the problem  
+since the solution set of the equality constraint $Ax=b$ has the form 
+$x_0+ker(A)$, where $x_0$ is any particular solution of this constraint.
+
+\noindent
+Denoting the Lagrange multipliers for the equality constraints with $y$, the
+Langrangian has the form 
+$$
+L(x,y)=c'x+\tfrac{1}{2}x'Gx+y'(Ax-b)=
+c'x+\tfrac{1}{2}x'Gx+\sum\nolimits_jy_j(a_i'x-b_i),
+$$
+where $a_i=row_i(A)$, and setting all partial 
+derivatives equal to zero yields the KKT conditions for the problem (\ref{qp}), (\ref{lc}) as
+%
+\begin{equation}
+\label{kkt_qp}
+\begin{pmatrix}
+G & A'\\
+A & 0
+\end{pmatrix}
+\begin{pmatrix}
+x\\
+y
+\end{pmatrix}
+=
+\begin{pmatrix}
+-c\\
+b
+\end{pmatrix}
+\end{equation}  
+%
+In general the existence of such a Lagrane multiplier $y$ is only a necessary
+condition for $x$ to be a local minium under the constraint but here it is
+sufficient for a global minimum
+%
+\begin{prop}
+\label{prop:kkt_qp}
+Suppose that $G$ is positive semidefinite definite on the kernel of $A$ and 
+$x\in\bbR^n$. If there exists a Lagrange multiplier $y\in\bbR^m$ such that
+(\ref{kkt_qp}) is satisfied, then $x$ is a solution of  the problem (\ref{qp}),
+(\ref{lc}). 
+
+If $G$ is strictly positive semidefinite on $ker(A)$ then $x$ is the unique
+solution of (\ref{qp}), (\ref{lc}). 
+\end{prop}
+%
+\textbf{Proof.}
+Assume that $(x,y)$ satisfy (\ref{kkt_qp}) and let $w\in\bbR^n$ with $Aw=b$ be
+arbitrary. We have to show that $x'Gx+2c'x=2f(x)\leq wf(w)=w'Gw+2c'w$. 
+
+\noindent
+Set $v=w-x$. Then $v\in ker(A)$. From (\ref{kkt_qp}) we have 
+$v'(Gx+c)=-v'A'y=-y'Av=0$. It follows that
+%
+\begin{align*}
+2f(w) &= 
+(x+v)'G(x+v)+2c'(x+v) =  
+x'Gx+2c'x+2v'(Gx+c)+v'Gv\\&=
+2f(x)+v'Gv\geq 2f(x),
+\end{align*}
+%
+since $G$ is positive semidefinite on $ker(A)$. 
+If $G$ is strictly positive semidefinite on $ker(A)$, 
+then $w\neq x$ implies $v\neq 0$ and hence $v'Gv>0$,
+thus $f(w)>f(x)$ and the claim follows.\qed
+
+\noindent
+\textbf{Step to solution.}
+Assume that we are starting at some point $x$ and want to compute a 
+\textit{step} $\Delta x$ such that $(x+\Delta x,y)$ 
+satisfies the above equations. I.e. here $x$ is considered known and
+$\Delta x$ and $y$ are the new unknowns.
+
+Substituting $x+\Delta x$ into (\ref{kkt_qp}) and moving the  
+known terms to the right we obtain the following system for the step $\Delta x$:
+%
+\begin{equation}
+\label{kkt_qp_step}
+\begin{pmatrix}
+G & A'\\
+A & 0
+\end{pmatrix}
+\begin{pmatrix}
+\Delta x\\
+y
+\end{pmatrix}
+=
+\begin{pmatrix}
+-(Gx+c)\\
+b-Ax
+\end{pmatrix}.
+\end{equation}  
+%
+In the present setting there is no need to formulate the problem in this way
+since we can just as well solve (\ref{kkt_qp}) directly. However we will use the
+quadratic function above as a local approximation to a nonlinear function and 
+then an iterative approach is necessary. Naturally then we start at an iterate
+$x$ and want to compute a step $\Delta x$ to move to the next iterate.
+
+The matrix on the left of (\ref{kkt_qp_step}) is symmetric but \textit{never}
+even positive semidefinite.
+However if $G$ is (strictly) positive definite on the kernel of $A$ then this 
+matrix is \textit{nonsingular}. Indeed assume that
+%
+\begin{align*}
+Gx+A'y&=0\q\text{and}\\
+Ax&=0.
+\end{align*}
+% 
+Then $x\in ker(A)$ and $0=x'(Gx+A'y)=x'Gx+y'Ax=x'Gx$ which implies $x=0$. It 
+follows that $y=0$ since $A'$ has full rank. We can thus solve the system
+(\ref{kkt_qp_step}) directly with an $LDL'$ decomposition or we can bring it
+to block diagonal form as follows: multiply the first equation from the left 
+first by $G^{-1}$, then by $A$ to obtain
+%
+\begin{align*}
+A\Delta x+AG^{-1}A'y &= -(Ax+AG^{-1}c)\\
+A\Delta x = b-Ax 
+\end{align*}  
+%
+which yields the equation
+%
+\begin{equation}
+\label{kkt_qp_y}
+AG^{-1}A'y = -(b+AG^{-1}c).
+\end{equation}  
+%
+Since $A$ has full rank we have $ker(A')=0$ and it follows that the matrix
+$AG^{-1}A'$ is also positive definite. Consequently (\ref{kkt_qp_y}) can be   
+solved for $y$ using the Cholesky decomposition of $H=AG^{-1}A'$ which has
+size $m\times m$ where usually $m<<n$. 
+
+The computation of $G^{-1}A'$ and $G^{-1}c$ can be handled as the solution of
+$GX=[A',c]$ using the Cholesky factorization of $G$. Assuming an optimized 
+computation of the matrix product $AG^{-1}A'$ by blocking (LaPack, optmized 
+BLAS) this will be faster than the direct approach in all cases.
+
+\noindent
+\textbf{Nullspace method.} The preceeding approach needed the matrix $G$ to be
+invertible (hence positive definite) but Lemma (\ref{prop:kkt_qp}) only needed 
+$G$ to be positive definite on the null space of $A$, i.e. the matrix 
+$Z'GZ$ is positive definite, where $Z$ is any $n\times(n-m)$ matrix $Z$ such 
+that the columns of $Z$ are a basis for the null space of $A$.
+
+Suppose we have such a matrix $Z$. Then the solution set of the constraint
+$Ax=b$ has the form $x=x_0+Zz$, $z\in\bbR^{n-m}$, where $x_0$ is any particular
+solution of this constraint. Rewriting $f(x)$ in terms of the new variable $z$
+we obtain
+%
+\begin{align*}
+f(x)&=\ol f(z)=
+\tfrac{1}{2}(x_0+Zz)'G(x_0+Zz)+c'(x_0+Zz)\\&=
+\tfrac{1}{2}z'(Z'GZ)z+z'Z'Gx_0+z'Z'c+x_0'Gx_0+c'x_0\\&=
+\tfrac{1}{2}z'Hz+d'z+const,
+\q\text{where }H=Z'GZ\text{ and }d=Z'(Gx_0+c),
+\end{align*}
+%
+so that the problem (\ref{qp}), (\ref{lc}) is equivalent to the uncontrained problem
+%
+\begin{equation}
+\label{nspace_qp}
+? = argmin_z\ths\tfrac{1}{2}z'Hz+d'z\q\text{with }H=Z'GZ\text{ and }d=Z'(Gx_0+c)
+\end{equation}
+%
+the solution of which is the solution of the equation
+%
+\begin{equation}
+\label{nspace_qp_sol}
+(Z'GZ)z=Hz=-d
+\end{equation}
+%
+which is an $(n-m)\times(n-m)$ system that can be solved with a Cholesky 
+factorization of the matrix $H=Z'GZ$. This matrix product is fast if optimized by
+blocking. But the computation of $Z$ is expensive: we can get it from a 
+$QR$-decomposition of $A'$:
+$$
+A' = QR
+$$
+with $Q$ $n\times m$ orthogonal and $R$ $m\times m$ upper triangular with no 
+zeros on the diagonal (since $A'$ has full rank $m$). With this
+it is clear that $ker(A)^\perp = Im(A') = Im(Q)$ is the span of the columns of 
+$Q$. 
+
+Thus we can get an ON-basis for the kernel of $A$ by enlarging the columns of 
+$Q$ to an ON-basis of $\bbR^n$ and $Z$ then consists of the newly added columns.
+Some factorizations in LaPack yield such a decomposition
+$A'=QR$, where $Q$ is $n\times n$ orthogonal and $R$ $n\times m$ upper 
+triangular with the last $n-m$ rows equal to zero ("full" decomposition).
+
+From this we can read off $Z$ directly as $Z=Q[,(m+1):n]$ (the last $n-m$ 
+columns of $Q$. However this $QR$ factorization of $A'$ is more expensive than
+a Cholesky decomposition.
+ 
+
+\subsection{Quadratic optimization on a ball}
+\label{subsec:QP_on_ball}
+
+Now we consider the problem
+%
+\begin{align}
+\label{qp_on_ball}
+? &= argmin_p\ths f(p)\q\text{subject to }
+\norm{p}\leq r,\q\text{where }
+f(p) = g'p+\tfrac{1}{2}p'Hp
+\end{align}  
+%
+with $H$ $n\times n$ symmetric and positive semidefinite. It is easy to see that
+an unconstrained global minimum exists if and only if $g\in ker(H)^\perp$. 
+However a global minimum under the constraint always exists.
+
+\noindent
+Minimization problems of this sort will be important for trust region methods.
+
+An uncontrained global minimizer $x$ would have to satisfy the equation 
+$\nabla f(p)=0$, i.e. $Hp=-g$ which has a solution only if 
+$g\in Im(H)=Im(H')=ker(H)^\perp$. Suppose we regularize this equation by replacing
+the matrix $H$ with $H+\lambda I$, where $\lambda>0$. This matrix is positive
+definite so a solution $x_*$ of 
+%
+\begin{equation}
+\label{H_reg}
+(H+\lambda I)p=-g
+\end{equation}
+% 
+always exists and is the unique global minimizer of the function
+$$
+f_\lambda(p)=p'(H+\lambda I)p+g'p=f(p)+\lambda\norm p^2.
+$$
+We claim that $p_*$ is an absolute minmizer of the original objective function 
+$f$ on the ball $B_r(0)=\{\ths p\in\bbR^n\ths\norm p\leq r\ths\}$ with radius
+$r=\norm{p_*}$. Indeed if $v\in B_r(0$ satisfies $f(v)<f(p_*)$ then we would have
+$$
+f_\lambda(v)=
+f(v)+\lambda\norm v\leq 
+f(p_*)+\lambda r=
+f(p_*)+\lambda\norm{p_*}=f_\lambda(p_*)
+$$
+contradicting the fact that $p_*$ is a global minimizer of $f_\lambda$. We record this fact as
+%
+\begin{prop}
+\label{prop:f_eps_min}
+The unique solution $p_*$ of (\ref{H_reg}) is the global minimizer of 
+$f(p)=g'p+\tfrac{1}{2}p'Hp$ on the ball $B_r(0)$ with radius $r=\norm{p_*}$.\qed 
+\end{prop}
+%
+From this it would seem that the solution of (\ref{qp_on_ball}) should be simple
+but this is not the case as the radius $r$ in the proposition above 
+\textit{depends on the solution} $p_*$.
+
+The main application will be to trust region methods as follows: the 
+optimization of a general nonlinear function proceeds iteratively moving in
+small steps from one iterate to the next. At each step we use a quadratic 
+approximation of the objective function centered at the current iterate $x_k$ to 
+compute the next step to be taken from this iterate.
+
+We trust this approximation only on a ball $B_r(x_k)$ of small radius $r$ 
+centered at the current iterate $x_k$ and therefore need to have some control 
+over that radius. We then minimize the quadratic approximation on that ball 
+$B_r(x_k)$ and move in the direction of the minimizer $x_*$ in the next step.
+By simple translation $g(p)=f(x_k+p)$ this can be reformulated as a minimization 
+over a ball centered at zero as above. With this the variable $p$ is the step to
+be taken from the iterate $x_k$.
+
+For this we need some control over the radius $r$ (which will be increased or
+decreeased depending on the performance in the previous step: how much the value
+of the actual objective function was decreased).
+
+This radius $r=r(\lambda)=\norm{p_*(\lambda)}$ depends on $\lambda$ and we 
+need to study this dependence. We can do this using the eigenvector 
+decomposition $H=UDU'$ with $U$ orthogonal, $D\geq 0$ a diagonal matrix 
+with the eigenvalues $\l_1\leq \l_2\leq\dots\leq\l_n$ of $H$ on the diagonal
+and the columns $u_j=col_j(U)$ the corresponding eigenvectors: $Gu_j=\l_ju_j$. 
+
+\noindent
+Now expand $g$ as a linear combination of these eigenvectors $u_j$:
+$$
+g=\sum_ja_ju_j,
+$$
+where the coefficients $a_j$ are the inner products $a_j=g'u_j$. It then follows
+that the $u_j$ are also the eigenvectors of the matrix function $(H+\l I)^{-1}$
+with associated eigenvalues $(\l_j+\l)^{-1}$ and this implies that
+$$
+p_*(\l)=
+(H+\l I)^{-1}\sum_ja_ju_j=
+\sum_j\frac{a_j}{\l_j+\l}u_j
+$$
+from which it follows that
+%
+\begin{equation}
+\label{norm_r}
+r(\lambda)^2=
+\norm{p_*(\lambda)}^2=\sum_j\frac{(g'u_j)^2}{(\l_j+\l)^2}
+\end{equation}
+%
+With this we can then easily solve the equation $r(\lambda)=r$ for $\lambda$ to obtain 
+any desired radius $r$ (e.g. using Newton's algorithm) but the computation of the eigenvalue 
+decomposition of $H$ is too expensive and has to be avoided. \cite{NW} has an algorithm that   
+uses only a small number of Cholesky factorizations (algorithm 4.3, chapter 4, p87) but the  
+derivation is unclear.
+
+\noindent
+Recall from (\ref{t_*}) in the introduction \ref{subsec:qp_intro} (with $x=0$) that the Cauchy 
+point $p^C_r$ of (\ref{qp_on_ball}) is given by
+%
+\begin{equation}
+\label{CauchyPoint_1}
+p^C_r = -t_*g
+\q\text{where }
+t_* = \min\left\{\ths
+\frac{r}{\norm{g}},\ths\frac{\norm{g}^2}{g'Hg}
+\ths\right\}.
+\end{equation}
+%  
+We now discuss several methods to improve on the Cauchy point:
+
