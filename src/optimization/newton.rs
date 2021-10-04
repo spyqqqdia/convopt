@@ -8,8 +8,8 @@ use crate::{
 };
 
 use super::Region;
-
-
+use nalgebra::Vector;
+use std::cmp::{min, max};
 
 
 /// Solve the regularized Newton equation $(H+l*I)p=-g$ by Cholesky factorization of
@@ -143,7 +143,38 @@ pub fn global_quadratic_minimizer(x: &DVec, g: &DVec, H: &DMat, lambda:f64) -> R
     Ok(x+newton_step)
 }
 
+/// New trust radius for the next Newton step computed from the behaviour of f
+/// versus the quadratic approximation of f in the current step.
+///
+/// #Arguments:
+///
+/// 'r': the old trust radius
+/// 'fx': function value at current iterate
+/// 'tp2': value of quadratic approximation of f at minimizer of f
+/// 'points': list of points (r_u,f_u), u = one of the target points to move to
+///           in the Newton step, r_u the distance of u from the current iterate
+///           and f_u = f(u), the value of the objective function f at u.
+///
+type Point = (f64,f64);
+use std::f64;
+fn next_trust_radius(r:f64, fx:f64, tp2:f64, points: &Vec<Point>) -> f64 {
 
+    // minimal value of f at the given points
+    let f_min = points.iter().
+        map(|(r_u,f_u):&(f64,f64)| -> f64 { *f_u }).
+        fold(1e10,|a:f64, b:f64| a.min(b));
+
+    // we go out to the farthest point achieving at least 5% of optimal decrease in f
+    let r_new = points.iter().map(
+        |(r_u,f_u):&(f64,f64)| -> f64 {
+            if (fx-*f_u) >= 0.05*(fx-f_min) { *r_u } else { 0f64 }
+        }).fold(0f64,|a, b| a.max(b));
+
+    // modify the old radius based on ratio actual_decrease/quadratic_approx_decrease
+    let q = (fx-f_min)/(fx-tp2);
+    let r1 = if q > 0.6 { 1.5*r } else if q > 0.05 { r } else { r/1.5f64 };
+    r1.max(r_new)
+}
 
 
 
@@ -184,10 +215,10 @@ pub fn newton_step(
     let p = &glm_G-x;   // note: shorter than newton step because of retraction
     let f = |z: &DVec| min_prob.objective_fn(z);
     let phi = |t:f64| f(&(x+t*&p));
-    let ls_result = golden_search(&phi,0f64,1f64,0.1f64);
+    let ls_result = golden_search(&phi,0f64,1.5f64,0.1f64);
     let t_ls = ls_result.0;
     let ls: DVec = x+t_ls*&p;            // minimizer of f in direction of glm
-    let r_ls = t_ls*&p.norm();           // ||ls-x||
+    let r_ls: f64 = t_ls*&p.norm();           // ||ls-x||
     let f_ls = ls_result.1;
 
     // dog-leg point, useful ony if b is outside the trust radius
@@ -197,15 +228,6 @@ pub fn newton_step(
     let r_dlp = (x-&dlp_G).norm();
 
     let fx = f(&x);
-    let rho = 1e-10+fx.abs();
-    // tp2: quadratic approximation of f centered at x,
-    // decrease fx-tp2(z) of tp2 at point z
-    let tp2_decrease = |z: &DVec| {
-
-        let h = z-x;
-        -(&g.dot(&h) + 05f64*(&H * &h).dot(&h))
-    };
-
     // determine the point z=ls,glm,cp,dlp with minimal value f(z)
     let f_glm = f(&glm_G);
     let f_cp = f(&cp_G);
@@ -237,21 +259,20 @@ pub fn newton_step(
             dlp_G
         };
 
-
-    let tp2_decrease_at_next_point = tp2_decrease(&next_point);
+    let rho = 1e-10+fx.abs();
     let ls_decrease= 100f64*(fx-f_ls)/rho;
     let cp_decrease= 100f64*(fx-f_cp)/rho;
     let dlp_decrease= 100f64*(fx-f_dlp)/rho;
     let glm_decrease= 100f64*(fx-f_glm)/rho;
-    let f_decrease_at_next_point =
-        ls_decrease.max(cp_decrease).max(dlp_decrease).max(glm_decrease);
-    // success ratio to determine new rust radius
-    let qq = f_decrease_at_next_point / tp2_decrease_at_next_point;
 
     // new trust radius
-    let new_trust_radius =
-        if r_ls >= 0.99999*r_glm { 1.5*r_ls } else if qq > 0.3 { 2f64*r } else
-        if qq > 0.1  { r } else { r / 2f64};
+    // tp2: quadratic approximation of f centered at next point
+    let h = &next_point;
+    let tp2 = fx + (&g.dot(h) + 0.5f64*(&H * h).dot(h));
+
+    let points = vec![(r_ls,f_ls),(r_glm,f_glm),(r_cp,f_cp),(r_dlp,f_dlp)];
+    let new_trust_radius = next_trust_radius(r,fx,tp2,&points);
+
 
     let norm_grad = min_prob.gradient(&next_point).norm();
     let f_next_point = min_prob.objective_fn(&next_point);
