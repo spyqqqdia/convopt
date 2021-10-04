@@ -15,7 +15,7 @@ use super::{MinProblem,Region};
 ///
 fn reg_lambda(r: f64, g: &DVec) -> f64 {
 
-    ((0.05f64/r.sqrt())*g.norm().max(0.00000001)).min(0.01)
+    ((0.05f64/r.sqrt())*g.norm().max(0.00000001)).min(0.001)
 }
 
 

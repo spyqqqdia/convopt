@@ -99,3 +99,12 @@ MinProblem: automatic initial trust radius based on line search.
 
 Examples: new example to test golden search.
 
+
+#-------------------------------------------------------------
+2021-10-04:|
+-------------
+
+Fixed computation of new trust radius in newton step.
+test_problems: changed the Rosenbrook function to a convex variant.
+
+Status: compiles and runs, no known BUGs.

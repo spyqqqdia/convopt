@@ -167,12 +167,12 @@ fn next_trust_radius(r:f64, fx:f64, tp2:f64, points: &Vec<Point>) -> f64 {
     // we go out to the farthest point achieving at least 5% of optimal decrease in f
     let r_new = points.iter().map(
         |(r_u,f_u):&(f64,f64)| -> f64 {
-            if (fx-*f_u) >= 0.05*(fx-f_min) { *r_u } else { 0f64 }
+            if (fx-*f_u) >= 0.2*(fx-f_min) { *r_u } else { 0f64 }
         }).fold(0f64,|a, b| a.max(b));
 
     // modify the old radius based on ratio actual_decrease/quadratic_approx_decrease
     let q = (fx-f_min)/(fx-tp2);
-    let r1 = if q > 0.6 { 1.5*r } else if q > 0.05 { r } else { r/1.5f64 };
+    let r1 = if q > 0.8 { 1.5*r } else if q > 0.1 { r } else { r/2f64 };
     r1.max(r_new)
 }
 
@@ -215,7 +215,7 @@ pub fn newton_step(
     let p = &glm_G-x;   // note: shorter than newton step because of retraction
     let f = |z: &DVec| min_prob.objective_fn(z);
     let phi = |t:f64| f(&(x+t*&p));
-    let ls_result = golden_search(&phi,0f64,1.5f64,0.1f64);
+    let ls_result = golden_search(&phi,0f64,2f64,0.1f64);
     let t_ls = ls_result.0;
     let ls: DVec = x+t_ls*&p;            // minimizer of f in direction of glm
     let r_ls: f64 = t_ls*&p.norm();           // ||ls-x||

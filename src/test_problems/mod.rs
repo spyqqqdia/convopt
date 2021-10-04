@@ -47,7 +47,8 @@ impl MinProblem for Maxent {
 
 
 
-/// The Rosenbrook function f(x,y) = (x-a)² + b*(y-x²)². Minimum at (a,a²).
+/// The Rosenbrook function f(x,y) = (x-a)² + b*(y+x²)². Minimum at (a,-a²).
+/// This is a convex variation of the Rosenbrook function which has the term b*(y-x²)² instead.
 ///
 pub struct Rosenbrook {
     dim: usize,
@@ -69,19 +70,19 @@ impl MinProblem for Rosenbrook {
     }
     fn objective_fn(&self,x: &DVec) -> f64 {
         let q = x[0]-self.a;
-        let r = x[1]-x[0]*x[0];
-        q+q + self.b*r*r
+        let r = x[1]+x[0]*x[0];
+        q*q + self.b*r*r
     }
     fn gradient(&self,x: &DVec) -> DVec {
-        let r = x[1]-x[0]*x[0];
-        let f_x = 2f64*(x[0]-self.a) - 4f64*self.b*r*x[0];
+        let r = x[1]+x[0]*x[0];
+        let f_x = 2f64*(x[0]-self.a) + 4f64*self.b*r*x[0];
         let f_y = 2f64*self.b*r;
         DVec::from_row_slice(&[f_x,f_y])
     }
     fn hessian(&self,x: &DVec) -> DMat {
 
-        let f_xx = 2f64 - 4f64*self.b*(x[1]-3f64*x[0]*x[0]);
-        let f_xy = - 4f64*self.b*x[0];
+        let f_xx = 2f64 + 4f64*self.b*x[1]+12f64*self.b*x[0]*x[0];
+        let f_xy = 4f64*self.b*x[0];
         let f_yy = 2f64*self.b;
         DMat::from_row_slice(2,2,&[
             f_xx, f_xy,

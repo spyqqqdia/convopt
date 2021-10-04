@@ -81,3 +81,12 @@ when selecting the next interval.
 optimization::newton::newton_step
 does not handle no_move state correctly: stays there until it hits max_iter limit.
 See examples/rosenbrook_example.rs
+
+
+#-------------------------------------------------------------
+2021-10-04:|
+-------------
+
+Rosenbrook still not working but this function may not be convex!
+Check and if it is not convex find a convex analogue.
+Fixed!
