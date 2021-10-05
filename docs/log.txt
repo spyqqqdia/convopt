@@ -108,3 +108,13 @@ Fixed computation of new trust radius in newton step.
 test_problems: changed the Rosenbrook function to a convex variant.
 
 Status: compiles and runs, no known BUGs.
+
+
+#-------------------------------------------------------------
+2021-10-05:|
+-------------
+
+New module: optimization::convex
+Added inequality constraints.
+
+Status: compiles, untested.

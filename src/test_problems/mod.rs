@@ -24,7 +24,9 @@ impl Maxent {
 }
 impl MinProblem for Maxent {
 
-    fn id(&self) -> &'static str { "Maxentproblem" }
+    fn id(&self) -> String {
+        String::from("MaxentProblem(dim=")+self.dim().to_string().as_str()+")"
+    }
     fn dim(&self) -> usize { self.dim }
     fn start_point(&self) -> DVec {
         DVec::from_fn(self.dim,|i,_| if i==0 { 0.9 } else { 0.1 })
@@ -63,7 +65,10 @@ impl Rosenbrook {
 }
 impl MinProblem for Rosenbrook {
 
-    fn id(&self) -> &'static str { "ArgminRosenbrook" }
+    fn id(&self) -> String {
+        String::from("RosenbrookProblem(a=")+self.a.to_string().as_str()+
+           "b="+self.b.to_string().as_str()+")"
+    }
     fn dim(&self) -> usize { self.dim }
     fn start_point(&self) -> DVec {
         DVec::from_fn(self.dim,|i,_| if i==0 { 6f64 } else { 2f64 })

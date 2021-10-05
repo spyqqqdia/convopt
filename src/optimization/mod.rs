@@ -2,6 +2,7 @@
 pub use self::newton::*;
 pub use self::solve::*;
 pub use self::linesearch::*;
+pub use self::convex::*;
 
 use crate::{Result, DVec, DMat};
 
@@ -9,6 +10,7 @@ use crate::{Result, DVec, DMat};
 mod linesearch;
 mod newton;
 mod solve;
+mod convex;
 
 
 //--------------------- Domains -------------------//
@@ -17,7 +19,7 @@ mod solve;
 ///
 pub trait Region {
 
-    fn id(&self) -> &'static str;
+    fn id(&self) -> String;
     fn dim(&self) -> usize;
     fn contains(&self,x: &DVec) -> bool;
     /// Assuming that x_0 is in this region G, computes the point
@@ -60,7 +62,7 @@ impl WholeSpace {
 }
 impl Region for WholeSpace {
 
-    fn id(&self) -> &'static str { &"WholeSpace" }
+    fn id(&self) -> String { String::from("WholeSpace") }
     fn dim(&self) -> usize { self.dim }
     fn contains(&self,x: &DVec) -> bool { true }
 }
@@ -76,7 +78,7 @@ impl AllPositive {
 }
 impl Region for AllPositive {
 
-    fn id(&self) -> &'static str { &"AllPositive" }
+    fn id(&self) -> String { String::from("AllPositive") }
     fn dim(&self) -> usize { self.dim }
     fn contains(&self,x: &DVec) -> bool { x.min()>0f64 }
 }
@@ -98,7 +100,7 @@ impl Region for AllPositive {
 ///
 pub trait MinProblem {
 
-    fn id(&self) -> &'static str;
+    fn id(&self) -> String;
     fn dim(&self) -> usize;
     fn start_point(&self) -> DVec;
     fn objective_fn(&self,x:&DVec) -> f64;

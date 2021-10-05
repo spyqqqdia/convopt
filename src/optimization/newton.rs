@@ -8,7 +8,6 @@ use crate::{
 };
 
 use super::Region;
-use nalgebra::Vector;
 use std::cmp::{min, max};
 
 
