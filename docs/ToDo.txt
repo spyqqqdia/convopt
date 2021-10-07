@@ -90,3 +90,14 @@ See examples/rosenbrook_example.rs
 Rosenbrook still not working but this function may not be convex!
 Check and if it is not convex find a convex analogue.
 Fixed!
+
+#-------------------------------------------------------------
+2021-10-07:|
+-------------
+
+ConstraintSet:
+we need a method which turns the set of constraints g(x)<=0 into the corresponding set of constraints
+g(x,r) := g(x)-r <= 0.
+This is needed for the feasibility subproblem via barrier method.
+
+With this finish up BarrierSubProblem.

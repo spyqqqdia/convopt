@@ -17,7 +17,8 @@ use std::cmp::{min, max};
 // This will be NaN in case g(x)=0. Hence the optimization must stay in the region
 // g(x) < 0.
 
-/// Constraint g(x) <= 0
+/// Constraint g(x) <= 0, with g assumed to be convex, C2 and
+/// defined everywhere.
 ///
 pub trait InequalityConstraint {
 
@@ -62,11 +63,12 @@ impl Region for dyn InequalityConstraint {
 }
 
 /// Constraint a'x <= c
-struct LinearInequalityConstraint {
+#[derive(Clone,Copy,Debug)]
+pub struct LinearInequalityConstraint {
 
-    id: String,
-    a: DVec,
-    c: f64,
+    pub id: String,
+    pub a: DVec,
+    pub c: f64,
 }
 
 impl LinearInequalityConstraint {
@@ -90,12 +92,13 @@ impl InequalityConstraint for LinearInequalityConstraint {
 
 
 /// Constraint a'x+(1/2)x'Qx <= c
-struct QuadraticInequalityConstraint {
+#[derive(Clone,Copy,Debug)]
+pub struct QuadraticInequalityConstraint {
 
-    id: String,
-    a: DVec,
-    Q: DMat,
-    c: f64,
+    pub id: String,
+    pub a: DVec,
+    pub Q: DMat,
+    pub c: f64,
 }
 
 impl QuadraticInequalityConstraint {
@@ -121,18 +124,21 @@ impl InequalityConstraint for QuadraticInequalityConstraint {
 
 /// Set of inequality constraints (equality constraints are handled separately).
 ///
-struct ConstraintSet {
+pub struct ConstraintSet {
 
-    constraints: Vec<Box<dyn InequalityConstraint>>,
+    pub id: &'static str,
+    pub dim: uisize,
+    pub constraints: Vec<Box<dyn InequalityConstraint>>,
 }
 
 impl ConstraintSet {
 
-    pub fn new() -> ConstraintSet {
+    pub fn new(id: &'static str, dim: usize) -> ConstraintSet {
 
-        ConstraintSet{ constraints: Vec::new() }
+        ConstraintSet{ id, dim, constraints: Vec::new() }
     }
     pub fn add(&mut self,constraint: Box<dyn InequalityConstraint>){
+        assert!(contraint.dim()==self.dim);
         self.constraints.push(constraint);
     }
     /// Sum of -log(-f) over all constraints f(x)<=0.
@@ -156,4 +162,5 @@ impl ConstraintSet {
         self.constraints.iter().
             map(|ct: &Box<dyn InequalityConstraint>| -> DMat { ct.log_barrier_hessian(x) }).sum()
     }
+
 }

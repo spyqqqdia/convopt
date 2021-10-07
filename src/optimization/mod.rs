@@ -1,16 +1,18 @@
-
-pub use self::newton::*;
-pub use self::solve::*;
-pub use self::linesearch::*;
-pub use self::convex::*;
-
+pub use self::{
+    linesearch::*,
+    newton::*,
+    solve::*,
+    constraint::*,
+    min_problem::*
+};
 use crate::{Result, DVec, DMat};
 
 
 mod linesearch;
 mod newton;
 mod solve;
-mod convex;
+mod constraint;
+mod min_problem;
 
 
 //--------------------- Domains -------------------//

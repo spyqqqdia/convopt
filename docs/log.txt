@@ -118,3 +118,12 @@ New module: optimization::convex
 Added inequality constraints.
 
 Status: compiles, untested.
+
+#-------------------------------------------------------------
+2021-10-07:|
+-------------
+
+Worked on the feasibility sub problem of the phase I convex feasibility
+problem. See min_problem.rs.
+
+Status: work in progress, does not compile.
