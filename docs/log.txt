@@ -127,3 +127,12 @@ Worked on the feasibility sub problem of the phase I convex feasibility
 problem. See min_problem.rs.
 
 Status: work in progress, does not compile.
+
+#-------------------------------------------------------------
+2021-10-012:|
+--------------
+
+Work on function to turn a constraint set into the corresponding constraint set
+for the phase I feasibility subproblems.
+
+Status: does not compile, the approach is technically flawed.

@@ -62,6 +62,7 @@ pub trait MinProblem {
 ///     h(x) = t*f(x) + barrierPenalty(x)
 /// with barrierPenalty(x) being the barrier penalty of the constraint set.
 /// This does not allow equality constraints.
+/// The parameter t controls the duality gap.
 ///
 trait BarrierSubProblem {
 
@@ -108,21 +109,24 @@ impl MinProblem for BarrierSubProblem {
 ///     subject to the constraints g(x) <= r,
 /// for all constraints g(x) <= 0 in the constraintSet via the barrier method.
 ///
-pub struct FeasibilitySubProblem<'a> {
+pub struct FeasibilitySubProblem {
     pub id: String,
     pub dim: usize,
     pub t: f64,
     pub region: WholeSpace,
     /// Constraintset for the constraints g(x)-r <= 0, not the original g(x) <= 0!
-    pub constraintSet: &'a ConstraintSet
+    pub constraintSet: ConstraintSet
 }
-impl FeasibilityProblem {
-    pub fn new(constraintSet: &ConstraintSet) -> FeasibilityProblem {
+impl FeasibilitySubProblem {
+    pub fn new(t: f64, constraintSet: &ConstraintSet) -> FeasibilitySubProblem {
 
         let dim: usize = 1+constraintSet.dim;
         let id = String::from("Feasibility problem  for constraint set ") +
             constraintSet.id;
-        FeasibilityProblem { id,dim,region:WholeSpace::new(dim),constraintSet }
+        FeasibilitySubProblem {
+            id,dim,t,region:WholeSpace::new(dim),
+            constraintSet: constraintSet.feasibility_constraint_set()
+        }
     }
 }
 impl BarrierSubProblem for FeasibilitySubProblem {
@@ -140,16 +144,10 @@ impl BarrierSubProblem for FeasibilitySubProblem {
     fn objectiveGradient(&self, x: &DVec) -> DVec {
         DVec::from_fn(self.dim, |i,_| if i<self.dim { 0f64 } else { 1f64 })
     }
-    fn objectiveHessian(&self, x: &DVec) -> DMat {
-
-    }
-    fn barrierFn(&self, x: &DVec) -> f64 { /* FIX ME */ }
-    fn barrierGradient(&self, x: &DVec) -> DVec {
-        /* FIX ME */
-    }
-    fn barrierHessian(&self, x: &DVec) -> DMat {
-        /* FIX ME */
-    }
+    fn objectiveHessian(&self, x: &DVec) -> DMat { DMat::zero(self.dim,self.dim) }
+    fn barrierFn(&self, x: &DVec) -> f64 { self.constraintSet.log_barrier_value(x) }
+    fn barrierGradient(&self, x: &DVec) -> DVec { self.constraintSet.log_barrier_gradient(x) }
+    fn barrierHessian(&self, x: &DVec) -> DMat { self.constraintSet.log_barrier_hessian(x) }
     /// this problem is solved on the entire space
     fn domain(&self) -> &dyn Region { &WholeSpace{ dim: self.dim } }
 
@@ -157,8 +155,9 @@ impl BarrierSubProblem for FeasibilitySubProblem {
 
 
 
-/// Feasibility problem for convex constraint set as min-problem for barrier function.
-pub fn feasibility_problem(constraintSet: &ConstraintSet) -> FeasibilityProblem {
+/// BarrierSubProblem with duality gap parameter t for the feasibility problem of the
+/// constraint set.
+pub fn feasibility_sub_problem(t: f64, constraintSet: &ConstraintSet) -> FeasibilitySubProblem {
 
-    FeasibilityProblem::new(constraintSet)
+    FeasibilitySubProblem::new(t,constraintSet)
 }

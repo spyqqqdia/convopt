@@ -101,3 +101,13 @@ g(x,r) := g(x)-r <= 0.
 This is needed for the feasibility subproblem via barrier method.
 
 With this finish up BarrierSubProblem.
+
+
+#-------------------------------------------------------------
+2021-10-012:|
+--------------
+
+Work on function to turn a constraint set into the corresponding constraint set
+for the phase I feasibility subproblems.
+
+Status: does not compile, the approach is technically flawed.

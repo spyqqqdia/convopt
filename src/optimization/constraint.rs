@@ -20,7 +20,7 @@ use std::cmp::{min, max};
 /// Constraint g(x) <= 0, with g assumed to be convex, C2 and
 /// defined everywhere.
 ///
-pub trait InequalityConstraint {
+pub trait InequalityConstraint: Clone {
 
     fn id(&self) -> String;
     fn dim(&self) -> usize;
@@ -49,6 +49,35 @@ pub trait InequalityConstraint {
 }
 
 
+fn feasibility_constraint(ct: &impl InequalityConstraint) -> Box<dyn InequalityConstraint>
+{
+    #[derive(Clone,Debug)]
+    struct result { ct: Box<dyn InequalityConstraint> };
+    impl InequalityConstraint for result {
+
+        fn id(&self) -> String { self.ct.id().clone()+" feasibility" }
+        fn dim(&self) -> usize { 1+self.ct.dim() }
+        fn value(&self,x: &DVec) -> f64 {
+
+            let z = DVec::from_fn( self.ct.dim(),|i,_| x[i]);
+            self.ct.value(&z)-x[self.ct.dim()]
+        }
+        fn gradient(&self,x: &DVec) -> DVec  {
+
+            let z = DVec::from_fn( self.ct.dim(),|i,_| x[i]);
+            self.ct.gradient(&z)   // FIX ME
+        }
+        fn hessian(&self,x: &DVec) -> DMat  {
+
+            let z = DVec::from_fn( self.ct.dim(),|i,_| x[i]);
+            self.ct.hessian(&z)   // FIX ME
+        }
+    }
+    let res = result{ ct: Box::new(ct.clone()) };
+    Box::new(res)
+}
+
+
 impl Region for dyn InequalityConstraint {
 
     fn id(&self) -> String {
@@ -63,7 +92,7 @@ impl Region for dyn InequalityConstraint {
 }
 
 /// Constraint a'x <= c
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Debug)]
 pub struct LinearInequalityConstraint {
 
     pub id: String,
@@ -87,12 +116,12 @@ impl InequalityConstraint for LinearInequalityConstraint {
     fn hessian(&self,x: &DVec) -> DMat {
         DMat::from_element(self.dim(),self.dim(),0f64)
     }
-
 }
 
 
+
 /// Constraint a'x+(1/2)x'Qx <= c
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Debug)]
 pub struct QuadraticInequalityConstraint {
 
     pub id: String,
@@ -126,20 +155,24 @@ impl InequalityConstraint for QuadraticInequalityConstraint {
 ///
 pub struct ConstraintSet {
 
-    pub id: &'static str,
-    pub dim: uisize,
+    pub id: String,
+    pub dim: usize,
     pub constraints: Vec<Box<dyn InequalityConstraint>>,
 }
 
 impl ConstraintSet {
 
-    pub fn new(id: &'static str, dim: usize) -> ConstraintSet {
+    pub fn new(id: String, dim: usize) -> ConstraintSet {
 
         ConstraintSet{ id, dim, constraints: Vec::new() }
     }
-    pub fn add(&mut self,constraint: Box<dyn InequalityConstraint>){
-        assert!(contraint.dim()==self.dim);
+    pub fn add_constraint(&mut self,constraint: Box<dyn InequalityConstraint>) -> () {
+        assert!(constraint.dim()==self.dim);
         self.constraints.push(constraint);
+    }
+    pub fn add_constraints(&mut self,constraints: Vec<Box<dyn InequalityConstraint>>) -> () {
+
+        for ct in constraints { self.add_constraint(ct) } ;
     }
     /// Sum of -log(-f) over all constraints f(x)<=0.
     /// Needed for log-barrier penalty function
@@ -162,5 +195,22 @@ impl ConstraintSet {
         self.constraints.iter().
             map(|ct: &Box<dyn InequalityConstraint>| -> DMat { ct.log_barrier_hessian(x) }).sum()
     }
+    /// the set of feasibility constraints g(x)-r <= 0 for all constraints g(x) <= 0
+    /// in this constraint set.
+    /// Needed for phase I feasibility analysis
+    pub fn feasibility_constraint_set(&self) -> ConstraintSet {
 
+        let cts: &Vec<Box<dyn InequalityConstraint>> = &self.constraints;
+        let feasibility_constraints: Vec<Box<dyn InequalityConstraint>> =
+            cts.iter().
+                map(|ct: &Box<dyn InequalityConstraint>| -> Box<dyn InequalityConstraint> {
+                    feasibility_constraint(ct)
+            }).collect();
+        let mut res = ConstraintSet::new(
+            String::from("FeasibilityConstraintSet for ")+self.id.as_str(),
+             1+self.dim
+        );
+        res.add_constraints(feasibility_constraints);
+        res
+    }
 }
