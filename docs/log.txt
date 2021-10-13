@@ -136,3 +136,11 @@ Work on function to turn a constraint set into the corresponding constraint set
 for the phase I feasibility subproblems.
 
 Status: does not compile, the approach is technically flawed.
+
+#-------------------------------------------------------------
+2021-10-013:|
+--------------
+
+Work on constraint and min_problem set for the phase I feasibility barrier-subproblems.
+Modules: constraint, min_problem.
+Status: compiles, untested.

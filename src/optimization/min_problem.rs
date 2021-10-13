@@ -81,7 +81,7 @@ trait BarrierSubProblem {
 impl MinProblem for BarrierSubProblem {
 
     fn id(&self) -> String {
-        self.id()+" at t = "+self.t().toString().as_str()
+        self.id()+" at t = "+self.t().to_string().as_str()
     }
     fn dim(&self) -> usize { self.dim() }
     fn start_point(&self) -> DVec { self.start_point() }
@@ -122,7 +122,7 @@ impl FeasibilitySubProblem {
 
         let dim: usize = 1+constraintSet.dim;
         let id = String::from("Feasibility problem  for constraint set ") +
-            constraintSet.id;
+            constraintSet.id.as_str();
         FeasibilitySubProblem {
             id,dim,t,region:WholeSpace::new(dim),
             constraintSet: constraintSet.feasibility_constraint_set()
@@ -137,19 +137,21 @@ impl BarrierSubProblem for FeasibilitySubProblem {
     fn start_point(&self) -> DVec {
 
         let zeros: DVec = DVec::repeat(self.dim-1,0f64);
-        let maxVal: f64 = self.constraintSet.iter().map(|ct| ct.value(zeros)).max();
+        let maxVal: f64 = self.constraintSet.constraints.iter().
+            map(|ct| ct.value(&zeros)).
+            fold(f64::NEG_INFINITY,|a:f64,b:f64| a.max(b));
         DVec::from_fn(self.dim,|i,_| if i<self.dim { 0f64 } else { 1f64+maxVal })
     }
     fn objectiveFn(&self, x: &DVec) -> f64 { x[self.dim-1] }
     fn objectiveGradient(&self, x: &DVec) -> DVec {
         DVec::from_fn(self.dim, |i,_| if i<self.dim { 0f64 } else { 1f64 })
     }
-    fn objectiveHessian(&self, x: &DVec) -> DMat { DMat::zero(self.dim,self.dim) }
+    fn objectiveHessian(&self, x: &DVec) -> DMat { DMat::repeat(self.dim,self.dim,0.0) }
     fn barrierFn(&self, x: &DVec) -> f64 { self.constraintSet.log_barrier_value(x) }
     fn barrierGradient(&self, x: &DVec) -> DVec { self.constraintSet.log_barrier_gradient(x) }
     fn barrierHessian(&self, x: &DVec) -> DMat { self.constraintSet.log_barrier_hessian(x) }
     /// this problem is solved on the entire space
-    fn domain(&self) -> &dyn Region { &WholeSpace{ dim: self.dim } }
+    fn domain(&self) -> &dyn Region { &self.region }
 
 }
 

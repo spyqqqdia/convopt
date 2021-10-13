@@ -20,7 +20,7 @@ use std::cmp::{min, max};
 /// Constraint g(x) <= 0, with g assumed to be convex, C2 and
 /// defined everywhere.
 ///
-pub trait InequalityConstraint: Clone {
+pub trait InequalityConstraint {
 
     fn id(&self) -> String;
     fn dim(&self) -> usize;
@@ -46,14 +46,14 @@ pub trait InequalityConstraint: Clone {
         let g = self.gradient(x);
         r*(self.hessian(x)-r*cross_product(&g,&g))
     }
+    fn clone_self(&self) -> Box<dyn InequalityConstraint>;
 }
 
 
-fn feasibility_constraint(ct: &impl InequalityConstraint) -> Box<dyn InequalityConstraint>
+fn feasibility_constraint(ct: &Box<dyn InequalityConstraint>) -> Box<dyn InequalityConstraint>
 {
-    #[derive(Clone,Debug)]
-    struct result { ct: Box<dyn InequalityConstraint> };
-    impl InequalityConstraint for result {
+    struct Result { ct: Box<dyn InequalityConstraint> };
+    impl InequalityConstraint for Result {
 
         fn id(&self) -> String { self.ct.id().clone()+" feasibility" }
         fn dim(&self) -> usize { 1+self.ct.dim() }
@@ -72,24 +72,14 @@ fn feasibility_constraint(ct: &impl InequalityConstraint) -> Box<dyn InequalityC
             let z = DVec::from_fn( self.ct.dim(),|i,_| x[i]);
             self.ct.hessian(&z)   // FIX ME
         }
+        fn clone_self(&self) -> Box<dyn InequalityConstraint> {
+            Box::new(Result{ ct: self.ct.clone_self() })
+        }
     }
-    let res = result{ ct: Box::new(ct.clone()) };
+    let res = Result{ ct: ct.clone_self() };
     Box::new(res)
 }
 
-
-impl Region for dyn InequalityConstraint {
-
-    fn id(&self) -> String {
-        String::from("Feasibility region for ")+self.id().as_str()
-    }
-    fn dim(&self) -> usize {
-        self.dim()
-    }
-    fn contains(&self,x: &DVec) -> bool {
-        self.value(x) <= 0f64
-    }
-}
 
 /// Constraint a'x <= c
 #[derive(Clone,Debug)]
@@ -116,6 +106,7 @@ impl InequalityConstraint for LinearInequalityConstraint {
     fn hessian(&self,x: &DVec) -> DMat {
         DMat::from_element(self.dim(),self.dim(),0f64)
     }
+    fn clone_self(&self) -> Box<dyn InequalityConstraint> { Box::new(self.clone() ) }
 }
 
 
@@ -148,6 +139,7 @@ impl InequalityConstraint for QuadraticInequalityConstraint {
         self.a.clone()+(&self.Q*x)
     }
     fn hessian(&self,x: &DVec) -> DMat { self.Q.clone() }
+    fn clone_self(&self) -> Box<dyn InequalityConstraint> { Box::new(self.clone() ) }
 }
 
 
@@ -159,7 +151,6 @@ pub struct ConstraintSet {
     pub dim: usize,
     pub constraints: Vec<Box<dyn InequalityConstraint>>,
 }
-
 impl ConstraintSet {
 
     pub fn new(id: String, dim: usize) -> ConstraintSet {
@@ -212,5 +203,17 @@ impl ConstraintSet {
         );
         res.add_constraints(feasibility_constraints);
         res
+    }
+}
+impl Region for ConstraintSet {
+
+    fn id(&self) -> String {
+        String::from("Feasible region for ")+self.id().as_str()
+    }
+    fn dim(&self) -> usize { self.dim() }
+    fn contains(&self,x: &DVec) -> bool {
+        self.constraints.iter().
+            map(|ct| ct.value(x) <= 0.0).
+            fold(true,|a:bool,b:bool| a&b)
     }
 }
